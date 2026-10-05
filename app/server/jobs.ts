@@ -158,6 +158,13 @@ export function snapshot(id: string): Snapshot {
   };
 }
 
+// Project name: the given title, else the brief's first non-empty line, else a placeholder in the project's language.
+// Cut by characters, not UTF-16 units, so an emoji at the limit isn't split in half.
+export function projectTitle(title: string | undefined, brief: string, lang: Lang) {
+  const name = (title || '').trim() || brief.split('\n').map((l) => l.trim()).find(Boolean) || (lang === 'en' ? 'Untitled' : '未命名');
+  return Array.from(name).slice(0, 40).join('');
+}
+
 export function createJob({ id, title, agent, brief, reference, lang = 'zh-TW', settings = {} }: { id: string; title: string; agent: AgentKind; brief: string; reference: Reference; lang?: Lang; settings?: Partial<Rounds> }) {
   const d = dirOf(id); mkdirSync(join(d, 'inputs'), { recursive: true }); mkdirSync(join(d, 'analysis'), { recursive: true });
   writeFileSync(join(d, 'brief.md'), brief || '');
