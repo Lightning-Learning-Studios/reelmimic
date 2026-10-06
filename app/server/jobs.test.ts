@@ -29,6 +29,24 @@ describe('cleanRounds', () => {
   });
 });
 
+describe('projectTitle', () => {
+  test('uses the title when one is given', () => {
+    assert.equal(J.projectTitle('My video', 'a brief', 'en'), 'My video');
+  });
+  test('falls back to the first non-empty line of the brief', () => {
+    assert.equal(J.projectTitle('', '\n  \nA video about cats\nmore', 'en'), 'A video about cats');
+    assert.equal(J.projectTitle('   ', 'Line one\r\nLine two', 'zh-TW'), 'Line one');
+  });
+  test('the placeholder follows the project language', () => {
+    assert.equal(J.projectTitle('', '\n', 'en'), 'Untitled');
+    assert.equal(J.projectTitle('', '', 'zh-TW'), '未命名');
+    assert.equal(J.projectTitle(undefined, '', 'zh-CN'), '未命名');
+  });
+  test('cuts at 40 characters without splitting an emoji', () => {
+    assert.equal(J.projectTitle('a'.repeat(39) + '🎬🎬', '', 'en'), 'a'.repeat(39) + '🎬');
+  });
+});
+
 describe('project settings', () => {
   test('a new project uses the server defaults', () => {
     const { id } = newJob();
