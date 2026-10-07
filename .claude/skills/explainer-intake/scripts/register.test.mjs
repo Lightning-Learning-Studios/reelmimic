@@ -62,3 +62,20 @@ test('start refuses to hand off while the intake has an open question', () => {
   assert.match(r.stderr, /Not handing off: 1 open question\(s\) in intake\/intake\.md[\s\S]*1\. Is the brand file final\?/);
   assert.doesNotMatch(r.stderr, /Who narrates|Music/);
 });
+
+test('a handoff.json without server, brand or logo stops check and start, naming the keys', () => {
+  const out = intake(({ handoff }) => { delete handoff.server; delete handoff.brand; delete handoff.logo; });
+  const r = check(out);
+  assert.equal(r.code, 1);
+  assert.match(r.out, /handoff\/handoff\.json is missing: server, brand, logo\./);
+  assert.doesNotMatch(r.out, /All required checks passed/);
+  const s = spawnSync(process.execPath, [REGISTER, 'start', out], { encoding: 'utf8' });
+  assert.equal(s.status, 1);
+  assert.match(s.stderr, /missing: server, brand, logo/);
+});
+
+test('a brand file that does not exist fails instead of skipping the brand checks', () => {
+  const r = check(intake(({ handoff }) => { handoff.brand = '/no/such/DESIGN.md'; }));
+  assert.equal(r.code, 1);
+  assert.match(r.out, /"brand" points at a file that does not exist: \/no\/such\/DESIGN\.md/);
+});

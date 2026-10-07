@@ -118,8 +118,9 @@ Name things the way a plan would draw them (`bar chart`, not `bar`, which also m
 Do not hand off while any of your own questions is open. Every question you could not settle (from the interview, a conflict, a `needs_source` you kept, a gate) goes under `## Open questions` in `intake/intake.md` as `- [ ] <question>`. Each one ends as `- [x] <question>: <answer>` or, when the person says it needs no answer, `- [dismissed by <name>: <reason>] <question>`. `register.mjs start` refuses while any `- [ ]` line is left and lists them.
 
 1. Write `handoff/brief.md` from `brief.template.md` here. It carries the approved script word for word, the approved storyboard, the on-screen rules word for word, the brand-wins rule, the claims rule, the client's terms, and the planning limits (no voice, music or image generation before approval).
-2. Write `handoff/handoff.json`:
-   `{ "title": "...", "lang": "en", "agent": "claude", "reference": "<example video path or null>", "inputs": ["<brand DESIGN.md>", "<logo>", "<fonts>", "intake/script.md", "intake/storyboard.md", "intake/evidence.md"] }`
+2. Write `handoff/handoff.json`. Every key is required (`register.mjs` stops and names any that is missing):
+   `{ "title": "...", "lang": "en", "agent": "claude", "server": "http://localhost:4318", "reference": "<example video path, or null>", "brand": "<the brand folder's DESIGN.md>", "logo": "<the logo file>", "inputs": ["<brand DESIGN.md>", "<logo>", "<fonts>", "intake/script.md", "intake/storyboard.md", "intake/evidence.md"] }`
+   `server` is the reelmimic address the person uses; `brand` and `logo` drive the brand colour, font and logo checks.
 3. With no example video, also write `handoff/plan.json` and `handoff/STORYBOARD.md` in reelmimic's format (`.claude/skills/video-clone/CONTRACT.md`), with `ref_shot: null`, `claims` on every shot and a top-level `evidence` list.
 4. Start reelmimic if it is not running: `./start.sh` (Windows: `start.bat`). Then run
    `node .claude/skills/explainer-intake/scripts/register.mjs start <out>`.

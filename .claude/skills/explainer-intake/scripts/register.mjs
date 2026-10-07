@@ -60,10 +60,20 @@ const intakeQuestions = () => {
   return sec.split('\n').filter((l) => /^\s*[-*]\s*\[\s\]\s*\S/.test(l) && !/<question>/.test(l)).map((l) => l.replace(/^\s*[-*]\s*\[\s\]\s*/, ''));
 };
 
+// handoff.json: every key the skill documents is required; a missing one stops the run instead of skipping a check.
+const HANDOFF_KEYS = ['title', 'lang', 'agent', 'server', 'reference', 'brand', 'logo', 'inputs'];
+const handoff = () => {
+  const H = json(join(out, 'handoff', 'handoff.json'));
+  const missing = HANDOFF_KEYS.filter((k) => !(k in H) || (k !== 'reference' && (H[k] == null || H[k] === '')));
+  if (missing.length) { console.error(`handoff/handoff.json is missing: ${missing.join(', ')}. Add ${missing.length > 1 ? 'them' : 'it'} (see SKILL.md, Step 7) and run this again. "reference" may be null; the others need a value.`); process.exit(1); }
+  for (const k of ['brand', 'logo']) if (!existsSync(at(H[k]))) { console.error(`handoff/handoff.json "${k}" points at a file that does not exist: ${H[k]}`); process.exit(1); }
+  return H;
+};
+
 if (cmd === 'start') {
   const openQs = intakeQuestions();
   if (openQs.length) { console.error(`Not handing off: ${openQs.length} open question(s) in intake/intake.md. Answer each one, or have the person dismiss it with their name and a reason:\n` + openQs.map((q, i) => `${i + 1}. ${q}`).join('\n')); process.exit(1); }
-  const H = json(join(out, 'handoff', 'handoff.json')), brief = read(join(out, 'handoff', 'brief.md'));
+  const H = handoff(), brief = read(join(out, 'handoff', 'brief.md'));
   const server = flag('--server') || H.server || 'http://localhost:4318';
   const projects = resolve(flag('--projects') || process.env.REELMIMIC_PROJECTS || join(ROOT, 'projects'));
   const inputs = (H.inputs || []).map(at);
@@ -136,7 +146,7 @@ if (cmd === 'watch') {
 
 // ---------- check: does reelmimic's plan keep what the person approved? ----------
 const S = state(); if (!S) { console.error('Run "register.mjs start" first.'); process.exit(1); }
-const H = json(join(out, 'handoff', 'handoff.json'));
+const H = handoff();
 const dir = S.dir, plan = existsSync(join(dir, 'plan.json')) ? json(join(dir, 'plan.json')) : null;
 if (!plan) { console.error(`No plan.json yet in ${dir}.`); process.exit(1); }
 let fails = 0;
@@ -184,7 +194,7 @@ check(!never.length, `narration and on-screen text avoid words_never${never.leng
 for (const w of listOf('must_show')) check(planText.includes(norm(w)), `must show: ${w}`, true);
 
 // 5. the brand
-if (H.brand && existsSync(at(H.brand))) {
+{
   const fm = read(at(H.brand)).split(/^---\s*$/m)[1] || '';
   const brandHex = new Set([...fm.matchAll(/#[0-9A-Fa-f]{6}/g)].map((m) => m[0].toUpperCase()));
   const colorsBlock = (fm.match(/^colors:\n((?:[ \t]+.*\n)+)/m) || [])[1] || '';
@@ -197,7 +207,7 @@ if (H.brand && existsSync(at(H.brand))) {
   const typo = JSON.stringify(plan.look?.typography || '') + JSON.stringify(plan.look || '');
   check(fams.every((f) => typo.includes(f)), `look.typography names the brand fonts (${fams.join(', ')})`);
 }
-if (H.logo) check(planText.includes(norm(basename(H.logo))) || (existsSync(join(dir, 'STORYBOARD.md')) && read(join(dir, 'STORYBOARD.md')).includes(basename(H.logo))), `the plan uses the logo file ${basename(H.logo)}`);
+check(planText.includes(norm(basename(H.logo))) || (existsSync(join(dir, 'STORYBOARD.md')) && read(join(dir, 'STORYBOARD.md')).includes(basename(H.logo))), `the plan uses the logo file ${basename(H.logo)}`);
 
 // 6. house style
 for (const f of ['plan.json', 'STORYBOARD.md']) if (existsSync(join(dir, f))) check(!/[\u2013\u2014]/.test(read(join(dir, f))), `${f} has no em or en dashes`, true);
