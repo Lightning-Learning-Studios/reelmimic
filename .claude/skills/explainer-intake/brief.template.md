@@ -36,7 +36,7 @@ You may sharpen camera moves, transitions and layout to follow the example video
 
 - The brand file is `inputs/<DESIGN.md>`. It wins over the example video on colour, type, illustration, motion, captions and logo. Fill `plan.look.palette` and `plan.look.typography` from its tokens, word for word.
 - Logo: `inputs/<logo file>`. Fonts: <font files in inputs/>. Declare them with @font-face.
-- People: <characters | simple icon people | no people>. <what stands in for people>
+- People: <characters | simple icon people | no people>. <what stands in for people> Simple icon people go in `plan.characters` with `"kind": "icon"` (no rig, no cast sheet); with no people, `characters: []`.
 
 ## Claims (every fact has a source)
 

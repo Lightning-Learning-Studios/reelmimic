@@ -24,6 +24,7 @@ interface Scenario {
 }
 let S: Scenario;
 let calls: string[] = [];
+const prompts: string[] = [];
 const count: Record<string, number> = {};
 const bump = (k: string) => (count[k] = (count[k] || 0) + 1);
 
@@ -36,9 +37,13 @@ function outputs(prompt: string, dir: string): [string, Record<string, unknown>]
   if ((r = m(/## 步驟：做角色「[^」]+」[\s\S]*?只寫 (\S+?)：/))) return [`pre_cast`, { [r[1]]: '// character' }];
   if (m(/## 步驟：整合前製結果/)) return ['plan_frames', { 'plan.json': { title: 'T', version: 2, characters: S.chars.map((id) => ({ id, name: id, file: `build/${id}.js` })) } }];
   if (m(/## 步驟：依使用者意見修改企劃/)) return ['replan', { 'plan.json': { title: 'T', version: 3 } }];
-  if (m(/## 步驟：製作準備/)) return ['setup', {
-    'build/production.json': { chunks: S.chunks, characters: S.chars.map((id) => ({ id, name: id, file: `build/${id}.js`, sheet: `out/check/cast/sheet_${id}.jpg` })) },
-    'out/check/cast/sheet.jpg': 'jpg', ...Object.fromEntries(S.chars.map((id) => [`out/check/cast/sheet_${id}.jpg`, 'jpg'])) }];
+  if (m(/## 步驟：製作準備/)) {
+    prompts.push(prompt);
+    if (m(/No characters need a rig/)) return ['setup', { 'build/production.json': { chunks: S.chunks, characters: [] } }];   // as told: no cast sheet
+    return ['setup', {
+      'build/production.json': { chunks: S.chunks, characters: S.chars.map((id) => ({ id, name: id, file: `build/${id}.js`, sheet: `out/check/cast/sheet_${id}.jpg` })) },
+      'out/check/cast/sheet.jpg': 'jpg', ...Object.fromEntries(S.chars.map((id) => [`out/check/cast/sheet_${id}.jpg`, 'jpg'])) }];
+  }
   if (m(/## 步驟：角色關/)) {
     const round = +(m(/第 (\d+) 輪/)?.[1] || 1), ch = m(/結果寫到 out\/check\/cast\/review_(\S+?)\.json/)?.[1];
     const who = ch || (m(/只看並排圖/) ? 'lineup' : 'serial'), ok = S.castPass(who, round);
@@ -98,12 +103,13 @@ const J = await import('./jobs.ts');
 
 // ---------- helpers ----------
 let n = 0;
-function newProject(stage: 'plan_review' | 'error', extra: Record<string, unknown> = {}) {
+function newProject(stage: 'plan_review' | 'error', extra: Record<string, unknown> = {}, plan: Record<string, unknown> = {}) {
   const id = `p-${++n}`;
   J.createJob({ id, title: 't', agent: 'claude', brief: 'make a video', reference: { type: 'url', src: 'https://example.com' } });
   const f = join(J.dirOf(id), 'job.json');
   writeFileSync(f, JSON.stringify({ ...J.load(id), stage, ...extra }));
-  if (stage === 'plan_review') writeFileSync(join(J.dirOf(id), 'plan.json'), JSON.stringify({ title: 'T', version: 1 }));
+  // the plan lists the scenario's characters, as the plan step writes them (Lightning: the cast gate follows the plan)
+  if (stage === 'plan_review') writeFileSync(join(J.dirOf(id), 'plan.json'), JSON.stringify({ title: 'T', version: 1, characters: S.chars.map((c) => ({ id: c, name: c, file: `build/${c}.js` })), ...plan }));
   return id;
 }
 const base = (o: Partial<Scenario> = {}): Scenario => ({
@@ -196,6 +202,34 @@ describe('production', () => {
     const seq = calls.filter((c) => /C1|S1/.test(c));
     assert.deepEqual(seq.slice(seq.indexOf('fix:C1')), ['fix:C1', 'shared_fix:C1', 'fix:C1', 'shot_qa:S1:2']);
   });
+});
+
+// Lightning Learning Studios, 2026-10-07: a plan with no characters to rig needs no cast sheet and no cast gate.
+describe('no characters', () => {
+  test('setup requires only production.json when the plan has no characters, or only icons', () => {
+    assert.deepEqual(J.setupOutputs({ characters: [] }), ['build/production.json']);
+    assert.deepEqual(J.setupOutputs({}), ['build/production.json']);
+    assert.deepEqual(J.setupOutputs({ characters: [{ id: 'dot', kind: 'icon' }, { id: 'disc', kind: 'icon' }] }), ['build/production.json']);
+    assert.deepEqual(J.setupOutputs({ characters: [{ id: 'disc', kind: 'icon', rig: true }] }), ['build/production.json', 'out/check/cast/sheet.jpg']);
+    assert.deepEqual(J.setupOutputs({ characters: [{ id: 'hero' }] }), ['build/production.json', 'out/check/cast/sheet.jpg']);
+  });
+
+  for (const [what, characters] of [['no characters', []], ['only icon characters', [{ id: 'disc', kind: 'icon', drawn_in_code: true }, { id: 'dot', kind: 'icon' }]]] as const) {
+    test(`${what}: setup makes no cast sheet, the cast gate is skipped, the film is done`, async () => {
+      S = base({ chars: [] });
+      prompts.length = 0;
+      const id = newProject('plan_review', {}, { characters });
+      await J.approve(id);
+      const j = J.load(id);
+      assert.equal(j.stage, 'done', j.error || '');
+      assert.ok(!calls.some((c) => c.startsWith('cast')), calls.join(' '));
+      assert.equal(j.pipeline.cast?.skipped, true);
+      assert.ok(!existsSync(join(J.dirOf(id), 'out', 'check', 'cast', 'sheet.jpg')));
+      assert.match(prompts[0], /No characters need a rig/);
+      assert.doesNotMatch(prompts[0], /角色設定圖/);
+      assert.doesNotMatch(j.chat.find((c) => c.text.startsWith('Plan approved') || c.text.startsWith('企劃已核准'))!.text, /角色關|characters/);
+    });
+  }
 });
 
 describe('pauses', () => {

@@ -1,7 +1,7 @@
 // Shapes shared by the server and the web app: job.json, the project snapshot, live events.
 // Files written by agents (plan.json, reviews, critique…) follow CONTRACT.md; only the fields the app reads are typed here.
 // Changed by Lightning Learning Studios, 2026-10-07: Job.brand (the brand folder a job's agents may read); open questions
-// that block approval until answered or dismissed (Job.questions, Snapshot.openQuestions).
+// that block approval until answered or dismissed (Job.questions, Snapshot.openQuestions); icon characters with no rig.
 
 export type AgentKind = 'claude' | 'codex';
 export type Lang = 'zh-TW' | 'en' | 'zh-CN';
@@ -74,6 +74,7 @@ export interface CastProgress {
   lineup?: boolean;
   chars?: Record<string, CastCharProgress>;
   acceptedByUser?: boolean;
+  skipped?: boolean;   // Lightning: no characters to rig, so no cast gate
 }
 
 export interface Pipeline {
@@ -140,7 +141,8 @@ export type PlanQuestion = string | { id?: string; question?: string; text?: str
 export interface QuestionDismissal { by: string; reason: string; at: string }
 export interface OpenQuestion { key: string; text: string; status: 'open' | 'answered' | 'dismissed'; answer?: string; by?: string; reason?: string; at?: string }
 
-export interface PlanCharacter { id: string; name?: string; file?: string; [k: string]: unknown }
+// Lightning: kind "icon" is a simple drawn icon (disc, dot, pictogram) with no rig and no cast sheet, unless rig: true
+export interface PlanCharacter { id: string; name?: string; file?: string; kind?: string; rig?: boolean; [k: string]: unknown }
 
 export interface Plan {
   title?: string;

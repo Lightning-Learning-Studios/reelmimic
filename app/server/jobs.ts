@@ -355,11 +355,16 @@ export async function start(id: string) {
 
 // Pre-production as a small DAG: the director writes the plan core, then every character (one agent each) and the assets
 // (one agent) are made at the same time, then the director merges them and paints the style frames with the real cast.
+// Changed by Lightning Learning Studios, 2026-10-07: characters that need a rig and a cast sheet. Simple drawn icons
+// (kind: "icon") do not, unless the plan marks them with rig: true. A plan with none skips the cast sheet and the cast gate.
+export const riggedCharacters = (plan: Plan | null) => (plan?.characters || []).filter((c) => !!(c && c.id) && (c.kind !== 'icon' || c.rig === true));
+export const setupOutputs = (plan: Plan | null) => ['build/production.json', ...(riggedCharacters(plan).length ? ['out/check/cast/sheet.jpg'] : [])];
+
 async function preProduction(id: string) {
   const d = dirOf(id);
   if (!(await step(id, 'planning', 'plan', {}, ['plan.json', 'STORYBOARD.md']))) return false;
   const plan = readJSON<Plan>(join(d, 'plan.json')) || {};
-  const chars = (plan.characters || []).filter((c): c is typeof c & { file: string } => !!(c && c.id && c.file && /^build\//.test(c.file)));
+  const chars = riggedCharacters(plan).filter((c): c is typeof c & { file: string } => !!(c.file && /^build\//.test(c.file)));
   const needAssets = (plan.assets || []).some((a) => a && a.status === 'to_fetch');
   const work = [
     ...chars.map((c) => turn(id, 'pre_cast', { character: c }, [c.file], { session: `cast-${c.id}`, who: `cast-${c.id}` }).then((r) => ({ what: `角色 ${c.name || c.id}`, ok: r.ok }))),
@@ -443,18 +448,20 @@ export async function approve(id: string) {
   if (block) throw Object.assign(new Error(block.error), { code: 409 });
   await alignIfReady(id).catch(() => null);   // lyrics pasted before the music arrived: time them now, before anything is built
   update(id, (j) => { j.approvedAt = now(); j.approvedPlanVersion = readJSON<Plan>(join(dirOf(id), 'plan.json'))?.version; j.engineSnapshot = snapshotEngine(id); j.pipeline = {}; j.sessions = j.approvedAtPrev ? {} : Object.fromEntries(Object.entries(j.sessions || {}).filter(([k]) => k.startsWith('cast-'))); j.approvedAtPrev = true; j.needs = []; j.userNote = null; });
-  chat(id, 'system', L(id, `企劃已核准，開始生產：角色關 → 分段製作（每段做完立刻審）→ 組裝 → 最後評審`, 'Plan approved. Production: characters → parts built and reviewed as they finish → assembly → final review'));
+  const cast = riggedCharacters(readJSON<Plan>(join(dirOf(id), 'plan.json'))).length > 0;
+  chat(id, 'system', L(id, `企劃已核准，開始生產：${cast ? '角色關 → ' : ''}分段製作（每段做完立刻審）→ 組裝 → 最後評審`, `Plan approved. Production: ${cast ? 'characters → ' : ''}parts built and reviewed as they finish → assembly → final review`));
   if (await production(id, { fresh: true })) await finalPanel(id);
 }
 
 // ---------- production: gates where defects are born ----------
 async function production(id: string, { fresh = false } = {}): Promise<boolean> {
   const d = dirOf(id), prev: Pipeline = fresh ? {} : load(id).pipeline || {};
-  const hasSetup = !fresh && existsSync(join(d, 'build', 'production.json')) && existsSync(join(d, 'out', 'check', 'cast', 'sheet.jpg'));
+  const plan = readJSON<Plan>(join(d, 'plan.json')), must = setupOutputs(plan);   // Lightning: no cast sheet without rigged characters
+  const hasSetup = !fresh && must.every((f) => existsSync(join(d, f)));
   // 1) director: scaffold, shared assets, cast sheets, chunk plan (skipped when resuming)
   if (!hasSetup) {
     pipe(id, (p) => { p.phase = 'setup'; });
-    if (!(await step(id, 'producing', 'setup', {}, ['build/production.json', 'out/check/cast/sheet.jpg']))) return false;
+    if (!(await step(id, 'producing', 'setup', { cast: riggedCharacters(plan).length > 0 }, must))) return false;
   } else setStage(id, 'producing', { error: null, failed: null });
   // 2) cast gate and 3) shot building run at the same time: shots only call the shared character definitions, so cast fixes
   //    flow into them automatically. Shot REVIEWS wait until the cast has passed, and re-grab fresh frames first.
@@ -557,6 +564,8 @@ async function production(id: string, { fresh = false } = {}): Promise<boolean> 
 type CastResult = 'error' | 'needs' | 'passed' | 'failed' | 'shared';
 async function castGate(id: string, prev: Pipeline): Promise<boolean> {
   const d = dirOf(id), prod = readJSON<Production>(join(d, 'build', 'production.json')) || {};
+  // Lightning: nothing to rig (no characters, or only icons) → no cast gate
+  if (!riggedCharacters(readJSON<Plan>(join(d, 'plan.json'))).length) { pipe(id, (p) => { p.cast = { round: 0, pass: true, state: 'passed', skipped: true }; }); return true; }
   const chars = (prod.characters || []).filter((c) => c && c.id && c.file && c.sheet);
   const files = new Set(chars.map((c) => c.file));
   const parallel = chars.length > 1 && files.size === chars.length && chars.every((c) => existsSync(join(d, c.sheet)));

@@ -1,4 +1,5 @@
 // Server-only shapes: build/production.json (written by the director at setup) and the variables each agent step gets.
+// Changed by Lightning Learning Studios, 2026-10-07: setup knows whether there is a cast to rig.
 import type { Config, Issue, Lang, NeedRequest, PlanCharacter } from '../shared/types.ts';
 
 export interface Chunk { id: string; shots: string[] }
@@ -29,7 +30,7 @@ export interface StepVars {
   pre_assets: NoVars;
   plan_frames: { results: { what: string; ok: boolean }[] };
   replan: { message: string };
-  setup: NoVars;
+  setup: { cast: boolean };   // Lightning: false when the plan has no characters that need a rig
   cast_qa: { round: number | 'lineup'; character?: CastMember; lineup?: boolean };
   cast_fix: { issues: unknown[]; round: number | 'user' | 'shared'; character?: CastMember; rigFiles?: string[]; shared?: boolean; message?: string };
   build_chunk: { chunk: Chunk };

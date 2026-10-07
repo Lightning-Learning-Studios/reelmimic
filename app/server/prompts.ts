@@ -4,7 +4,8 @@
 // assemble and critique skip compare.py when there is no reference video.
 // Changed by Lightning Learning Studios, 2026-10-07: agents work inside their own project folder, so skill paths are
 // absolute and no prompt points at the repo root or at other projects; the brief's on-screen rules are hard (ONSCREEN);
-// answered open questions are recorded with their answer (ANSWERS).
+// answered open questions are recorded with their answer (ANSWERS); setup skips the rig and cast sheet with no characters
+// to rig (NO_CAST), and icons are characters of kind "icon".
 import { join } from 'node:path';
 import type { Lang } from '../shared/types.ts';
 import type { BaseVars, Prompts } from './types.ts';
@@ -43,6 +44,12 @@ every shot it names as shots[].rules (the rule line as a string, for example "R1
 shot's summary, action, reads and text_overlay so the rule holds: never draw or write a "never" thing, no digit in on-screen
 text under no-numerals, no stated number (not even "about 18") of a no-count thing, exactly n of an "exactly" thing. A rule
 wins over the reference video and your own layout ideas. If one cannot hold, ask in open_questions; never drop or soften it.`;
+
+// Lightning: a plan with no characters to rig (none, or only simple icons) gets no rig and no cast sheet.
+const NO_CAST = `2. No characters need a rig (plan.characters is empty or holds only "kind": "icon" items). Draw the icons in code, in a
+   shared icons file or in each shot file; do not use vector_rig or cast_rig, and make no cast sheet. In production.json
+   write "characters": [] and leave out cast_sheet.
+`;
 
 // Lightning: open questions block approval until answered or dismissed, so an answer must be recorded, not deleted.
 const ANSWERS = `Open questions block approval. When the person answers one (in this message or earlier), keep that item in
@@ -111,6 +118,8 @@ ${p.brief}
 4. 寫 plan.json（CONTRACT.md 格式）與 STORYBOARD.md：logline、look、borrowed_from_reference、角色／產品、每鏡時間、動作、轉場、reads、
    素材與音效；逐鏡對照：ref_shot、ref_what、camera（engine 規格、pace 跟參考一致）。平均鏡頭長度、字卡比例、暗調比例與參考接近（±30%）。
 5. 角色：plan.characters 每個角色寫清楚造型（輪廓、比例、配色、髮型、服裝、特徵）與 id。
+   Simple drawn icons (discs, dots, pictograms, limbless silhouettes) go in plan.characters with "kind": "icon" and no file:
+   they get no rig and no cast sheet. Add "rig": true only when an icon must move like a character. No people at all: characters: [].
    引擎用 vector_rig 這類「每個角色一個定義檔」的做法時，填 "file": "build/assets/cast/<id>.js"，並先在 build/ 建好引擎骨架、
    把 rig 複製到 build/assets/（角色檔要能在那裡跑）。**不要自己寫角色定義檔**：接下來每個角色會有一個 agent 同時做。
 6. 素材：plan.assets 每一項寫 purpose、kind、query（搜尋關鍵字）與 status：要從外部取得的標 to_fetch、程式畫的標 drawn_in_code、使用者提供的標 user。
@@ -175,13 +184,13 @@ ${ENGINE(p)}
    - 混音：旁白約 -16 LUFS；配樂在旁白下約低 10–14 dB，但在沒有旁白的空檔（字卡、停頓笑點）要聽得到（約 -24 ～ -28 dBFS RMS），不要用過強的 sidechain 把音樂壓到消失；做完量一次空檔的音量。
    每個鏡頭各自一個檔案（painted-animation：src/scenes/<shot>.js；hyperframes：compositions/<shot>.html），總檔先把全部鏡頭的引用都掛好，
    讓製作 agent 只需要改自己的鏡頭檔，不會互相衝突。
-2. **角色**：用 engine 的角色系統做出每個角色（2D 向量風格一律用 ${SKILL}/assets/vector_rig/ 的骨架＋一體輪廓角色，不准用分開的形狀拼角色；
+${p.cast ? `2. **角色**：用 engine 的角色系統做出每個角色（2D 向量風格一律用 ${SKILL}/assets/vector_rig/ 的骨架＋一體輪廓角色，不准用分開的形狀拼角色；
    painted 風格用角色骨架 cast_rig）。**每個角色一個定義檔**（例如 build/assets/cast/<角色id>.js），骨架／rig 本體另外一個共用檔；
    鏡頭只能呼叫角色定義、不准在鏡頭裡另外畫角色的身體部位。（每個角色會由不同 agent 同時審查與修正，所以不能把所有角色寫在同一個檔案裡。）
 3. **角色設定圖**：每個角色一張 out/check/cast/sheet_<角色id>.jpg（全解析度）：正面、3/4、側面、5 個以上表情、
    6 個以上本片會用到的動作姿勢（舉手、揮手、拿東西、坐、跑、驚嚇…）。再加一張所有角色並排的 out/check/cast/sheet.jpg（比例、互動姿勢）。
    每張都要有可以重新輸出的指令（寫進 production.json 的 characters[].render）。自己先打開看過。
-4. 寫 build/production.json：
+` : NO_CAST}4. 寫 build/production.json：
    { "cast_sheet": "out/check/cast/sheet.jpg",
      "characters": [ { "id": "dou", "name": "豆豆", "file": "build/assets/cast/dou.js", "sheet": "out/check/cast/sheet_dou.jpg", "render": "重新輸出這張設定圖的指令" } ],
      "rig_files": ["build/assets/rig.js"],
