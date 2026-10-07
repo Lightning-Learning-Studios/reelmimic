@@ -1,5 +1,6 @@
 // ReelMimic server: REST + SSE over the job machine in jobs.ts, and static files (the built UI and project files).
 //   node server/index.ts             → http://localhost:4318
+// Changed by Lightning Learning Studios, 2026-10-07: the approve refusal is in English for English projects.
 import './env.ts';   // first: API keys / tool paths from ~/.reelmimic/secrets.json
 import express, { type Request, type Response } from 'express';
 import multer from 'multer';
@@ -81,7 +82,8 @@ app.post('/api/projects/:id/approve', (req, res) => {
   const { id } = req.params; if (!guard(res, id)) return;
   if (J.busy(id)) return res.status(409).json({ error: 'agent 正在工作中，請等這一輪完成' });
   const open = J.openInputs(id);
-  if (open.length) return res.status(409).json({ error: '還有需要你提供或略過的素材：' + open.map((r) => r.label || r.id).join('、'), open });
+  // Changed by Lightning Learning Studios, 2026-10-07: English projects get this refusal in English.
+  if (open.length) return res.status(409).json({ error: J.load(id).lang === 'en' ? 'Still needed before approval (give it or skip it): ' + open.map((r) => r.label || r.id).join(', ') : '還有需要你提供或略過的素材：' + open.map((r) => r.label || r.id).join('、'), open });
   J.approve(id).catch((e) => console.error(e)); res.json({ ok: true });
 });
 // Lyrics: the user pastes the text; the server times it against the plan's music section.
