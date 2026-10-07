@@ -160,9 +160,10 @@ check(['version', 'title', 'style', 'engine', 'look', 'shots'].every((k) => plan
 check(F.width > 0 && F.height > 0 && F.fps > 0 && F.duration_s > 0, `format ${F.width}x${F.height}, ${F.fps} fps, ${F.duration_s} s`);
 const bad = shots.filter((x) => !x.id || !(x.end_s > x.start_s) || !('ref_shot' in x) || !x.camera);
 check(!bad.length, `every shot has id, times, ref_shot, camera${bad.length ? ' (missing in ' + bad.map((x) => x.id).join(', ') + ')' : ''}`);
-const frames = (plan.style_frames || []).map((f) => (typeof f === 'string' ? f : f?.path || f?.file || ''));
+const frames = (plan.style_frames || []).map((f) => (typeof f === 'string' ? f : typeof (f?.file || f?.path) === 'string' ? f.file || f.path : ''));
 const onDisk = frames.filter((f) => f && existsSync(join(dir, f)));
-check(frames.length && frames.every((f, i) => typeof plan.style_frames[i] === 'string'), `style_frames is a list of paths (${frames.length})`);
+// a path, or an object with file (or path), as reelmimic's planning prompt invites ("which shot, what to show")
+check(frames.length && frames.every(Boolean), `style_frames lists ${frames.length} frame(s), each a path or { file }${frames.every(Boolean) ? '' : ' (an entry has no path)'}`);
 check(onDisk.length >= 3, `style frames painted: ${onDisk.length} of ${frames.length} exist`, true);
 
 // 2. the approved script, word for word

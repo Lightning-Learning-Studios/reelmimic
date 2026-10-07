@@ -79,3 +79,11 @@ test('a brand file that does not exist fails instead of skipping the brand check
   assert.equal(r.code, 1);
   assert.match(r.out, /"brand" points at a file that does not exist: \/no\/such\/DESIGN\.md/);
 });
+
+test('style frames written as objects (live test 2) pass; an entry with no path fails', () => {
+  const frames = [{ file: 'out/check/style_1.jpg', status: 'rendered', shot: 'S1', at_s: 2, shows: 'title card' }, { file: 'out/check/style_2.jpg', shot: 'S1' }];
+  assert.equal(check(intake(({ plan }) => { plan.style_frames = frames; })).code, 0);
+  const r = check(intake(({ plan }) => { plan.style_frames = [...frames, { shot: 'S1', shows: 'no file' }]; }));
+  assert.equal(r.code, 1);
+  assert.match(r.fails.join('\n'), /style_frames lists 3 frame\(s\), each a path or \{ file \} \(an entry has no path\)/);
+});

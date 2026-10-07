@@ -79,6 +79,7 @@ projects/<id>/
 規則：
 - `shots` 的時間兩種都寫（拍與秒）；沒有音樂時 `start_beat/end_beat` 可省略。
 - 每個鏡頭都要有 `ref_shot`、`ref_what`、`camera`（逐鏡對照參考片；camera 用 engine 能直接吃的規格）。
+- `style_frames`：每項是路徑字串，或 `{ "file": "out/check/style_1.jpg", "shot": "S4", "shows": "…" }`（兩種都可以）。<!-- Changed by Lightning Learning Studios, 2026-10-07. -->
 - `open_questions`：每項是字串，或使用者回答後的 `{ "question": "…", "answer": "…" }`。每個問題都要回答或由使用者略過（寫名字與理由）才能核准企劃。<!-- Changed by Lightning Learning Studios, 2026-10-07: open questions block approval. -->
 - `shots[].rules`（選填）：brief.md 有 `## On-screen rules` 時，把每條規則原文複製到它指定的每個鏡頭，例如 `"rules": ["R1 no-count: dots, people"]`；鏡頭的 summary、action、reads、text_overlay 都要符合。<!-- Changed by Lightning Learning Studios, 2026-10-07: hard on-screen rules from explainer-intake. -->
 - `analysis/STYLE.md` 第一行寫媒材（2d-painted · 2d-vector · 3d-stylized · 3d-photoreal · live-action）。

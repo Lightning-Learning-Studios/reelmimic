@@ -169,7 +169,7 @@ function Plan({ s, file, job, onTag, onZoom }: { s: SnapshotView; file: FileUrl;
       </section>
 
       {(P.style_frames || []).length > 0 && <section className="card"><div className="card-h"><h2>定調畫面</h2><span className="sp" /><span className="small faint">{P.style_frames!.length} 張</span></div>
-        <div className="scroller">{P.style_frames!.map((f) => <img key={f} className="shot-img" src={file(f)} onClick={() => onZoom(file(f))} />)}</div></section>}
+        <div className="scroller">{P.style_frames!.map(framePath).filter(Boolean).map((f) => <img key={f} className="shot-img" src={file(f)} onClick={() => onZoom(file(f))} />)}</div></section>}
 
       {(P.characters || []).length > 0 && <section className="card"><div className="card-h"><h2>角色</h2></div>
         <div className="cast">{P.characters!.map((c, i) => <div key={c.id || c.name}><div className="avatar" style={{ background: palette[(i + 1) % Math.max(1, palette.length)] || SOFT[i % 8], color: 'rgba(0,0,0,.6)' }}>{(c.name || '?').slice(0, 1)}</div><div className="grow"><b>{c.name}</b><div className="small muted" style={{ marginTop: 2 }}>{c.design}</div>{c.arc && <div className="small faint" style={{ marginTop: 4 }}>{c.arc}</div>}</div></div>)}</div></section>}
@@ -302,6 +302,9 @@ function Lyrics({ id, s, editable }: { id: string; s: SnapshotView; editable: bo
     </div>
   );
 }
+// Lightning: a style frame is a path, or an object with file (or path), as the planning prompt invites
+const framePath = (f: string | { file?: string; path?: string }) => (typeof f === 'string' ? f : f?.file || f?.path || '');
+
 // Changed by Lightning Learning Studios, 2026-10-07: open questions block approval too, and the bar lists them.
 function Approve({ id, open, questions }: { id: string; open: RequiredInput[]; questions: OpenQuestion[] }) {
   const [err, setErr] = useState(''), [busy, setBusy] = useState(false);
@@ -505,7 +508,7 @@ function Result({ s, file }: { s: SnapshotView; file: FileUrl }) {
   return (
     <section className="card">
       <div className="card-h"><div><div className="eyebrow">成品</div><h2>影片</h2></div><span className="sp" /><a className="btn sm" href={file(s.video!)} download><I n="download" />下載 MP4</a></div>
-      <div className="player"><video ref={v} src={file(s.video!)} poster={s.plan?.style_frames?.[0] ? file(s.plan.style_frames[0]) : undefined} preload="metadata" controls playsInline onTimeUpdate={(e) => setT(e.currentTarget.currentTime)} onLoadedMetadata={(e) => setD(e.currentTarget.duration)} onSeeked={(e) => setT(e.currentTarget.currentTime)} /></div>
+      <div className="player"><video ref={v} src={file(s.video!)} poster={s.plan?.style_frames?.[0] ? file(framePath(s.plan.style_frames[0])) : undefined} preload="metadata" controls playsInline onTimeUpdate={(e) => setT(e.currentTarget.currentTime)} onLoadedMetadata={(e) => setD(e.currentTarget.duration)} onSeeked={(e) => setT(e.currentTarget.currentTime)} /></div>
 
       <div className="scrub" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); seek(((e.clientX - r.left) / r.width) * d); }}>
         <div className="scrub-fill" style={{ width: d ? `${(t / d) * 100}%` : 0 }} />
