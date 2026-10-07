@@ -1,5 +1,7 @@
 // Phase prompts. Each agent turn does exactly one step and writes the files CONTRACT.md defines; the server advances only
 // when those files exist. Same prompts for Claude Code and Codex (skills are referenced by path, no Skill tool needed).
+// Changed by Lightning Learning Studios, 2026-10-07 (explainer-intake): replan takes a "[frames only]" message, and
+// assemble and critique skip compare.py when there is no reference video.
 import type { Lang } from '../shared/types.ts';
 import type { BaseVars, Prompts } from './types.ts';
 
@@ -128,7 +130,8 @@ ${EYE}`,
 使用者的意見：
 ${p.message}
 
-修改 plan.json 與 STORYBOARD.md（version +1，changelog），必要時補抓素材、重畫受影響的定調畫面。不要開始生成。逐條回報怎麼處理；做不到的直說並給替代方案。`,
+修改 plan.json 與 STORYBOARD.md（version +1，changelog），必要時補抓素材、重畫受影響的定調畫面。不要開始生成。
+If the message starts with [frames only]: do not change shots, narration or timing. Only paint the style frames listed in plan.style_frames (out/check/style_<n>.jpg, drawn in code), fetch any to_fetch images, and update style_frames and assets in plan.json.逐條回報怎麼處理；做不到的直說並給替代方案。`,
 
   // ---------- production: setup → cast gate → shot line → assemble ----------
   setup: (p) => `${HEADER(p)}
@@ -241,7 +244,7 @@ ${ENGINE(p)}
 ## 步驟：組裝成片（所有鏡頭段都已通過審查）
 1. 讀 build/production.json 與各段 out/check/shots/*.fixes.json 裡 "status": "shared" 的項目，先修共用檔的問題。
 2. 接起全部鏡頭：轉場、配樂、音效、字幕（歌詞字幕只能用 analysis/lyrics/subs.lrc 或 inputs 的 LRC；沒有就不上歌詞字幕）。
-3. 正式渲染 out/video.mp4；跑 python ${SKILL}/scripts/compare.py ${p.dir}；檢查每個接縫（前後 0.5 秒 strip）。
+3. 正式渲染 out/video.mp4；跑 python ${SKILL}/scripts/compare.py ${p.dir}（if analysis/report.json does not exist there is no reference video: skip compare.py）；檢查每個接縫（前後 0.5 秒 strip）。
 4. 回報：長度、解析度、每鏡一句話、還不完美或暫代的部分。`,
 
   // ---------- final panel ----------
@@ -255,7 +258,7 @@ ${RULES}
 
 1. 參考片：analysis/report.json 與 sheet 圖。
 2. 成片：ffmpeg 每 0.5 秒抽一格做總覽到 out/check/critic/，全部打開；每個接縫抽前後 0.5 秒的 strip；可疑處抽全解析度放大。
-3. 跑 compare.py，看 compare_all.jpg。
+3. 跑 compare.py，看 compare_all.jpg（if analysis/report.json does not exist there is no reference video: skip this and judge against STORYBOARD.md and the brand file in inputs/）。
 4. 第 2 輪以後：先讀 out/check/fixes.json，**逐項核對上一輪的必修是否真的修好**（看它附的 before/after，再自己在成片同一秒抽格確認）；
    說修好但沒修好的，原樣列回 must_fix 並註明「上一輪已列，仍未修好」。
 ${EYE}
