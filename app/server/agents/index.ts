@@ -56,7 +56,7 @@ function lines(stream: Readable, onLine: (l: string) => void) {
 const short = (v: unknown, n = 160) => { const s = typeof v === 'string' ? v : JSON.stringify(v); return s.length > n ? s.slice(0, n) + '…' : s; };
 
 function claudeArgs(sessionId?: string | null) {
-  const a = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', '--allowedTools', CLAUDE_TOOLS];
+  const a = ['-p', '--model', 'claude-opus-5-5', '--effort', 'medium', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', '--allowedTools', CLAUDE_TOOLS];
   if (sessionId) a.push('--resume', sessionId);
   return a;
 }
