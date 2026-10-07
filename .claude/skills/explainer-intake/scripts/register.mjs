@@ -183,7 +183,7 @@ if (H.brand && existsSync(at(H.brand))) {
 if (H.logo) check(planText.includes(norm(basename(H.logo))) || (existsSync(join(dir, 'STORYBOARD.md')) && read(join(dir, 'STORYBOARD.md')).includes(basename(H.logo))), `the plan uses the logo file ${basename(H.logo)}`);
 
 // 6. house style
-for (const f of ['plan.json', 'STORYBOARD.md']) if (existsSync(join(dir, f))) check(!/[–—]/.test(read(join(dir, f))), `${f} has no em or en dashes`, true);
+for (const f of ['plan.json', 'STORYBOARD.md']) if (existsSync(join(dir, f))) check(!/[\u2013\u2014]/.test(read(join(dir, f))), `${f} has no em or en dashes`, true);
 if (S.reference) check(shots.every((x) => x.ref_shot != null), 'every shot maps to a shot in the example video', true);
 console.log(fails ? `\n${fails} check(s) failed.` : '\nAll required checks passed.');
 process.exit(fails ? 1 : 0);
