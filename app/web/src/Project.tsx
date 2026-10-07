@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { InputKind, Job, Pipeline as PipelineState, RequiredInput, RoundKey, Rounds, Stage } from '../../shared/types.ts';
+import type { InputKind, Job, OpenQuestion, Pipeline as PipelineState, RequiredInput, RoundKey, Rounds, Stage } from '../../shared/types.ts';
 import { api } from './api.ts';
 import { I, Orb, Md, Ring, AutoText, useNow, clock, fmt, RoundsEditor } from './ui.tsx';
 import type { IconName, RoundValues } from './ui.tsx';
@@ -189,11 +189,10 @@ function Plan({ s, file, job, onTag, onZoom }: { s: SnapshotView; file: FileUrl;
       {!PRE_PROD.includes(job.stage) && ((s.requiredInputs || []).length > 0 || s.lyrics) && <RequiredInputs id={job.id} s={s} editable={false} />}
       {PRE_PROD.includes(job.stage) && !(s.requiredInputs || []).length && s.lyrics && <RequiredInputs id={job.id} s={s} editable={review} />}
 
-      {(P.open_questions || []).length > 0 && <section className="card"><div className="card-h"><h2>需要你決定</h2></div>
-        <div className="list">{P.open_questions!.map((q, i) => <div key={i} className="li"><div className="li-ico accent"><I n="bubble" /></div><div className="grow">{q}</div>{review && <button className="btn sm plain" onClick={() => onTag({ q })}>回答</button>}</div>)}</div></section>}
+      {(s.openQuestions || []).length > 0 && <OpenQuestions id={job.id} qs={s.openQuestions} review={review} onTag={onTag} />}
 
       {(P.changelog || []).length > 1 && <div className="small faint" style={{ margin: '14px 4px 0' }}>修改紀錄：{P.changelog!.join(' → ')}</div>}
-      {review && <Approve id={job.id} open={(s.requiredInputs || []).filter((r) => r.status === 'missing')} />}
+      {review && <Approve id={job.id} open={(s.requiredInputs || []).filter((r) => r.status === 'missing')} questions={(s.openQuestions || []).filter((q) => q.status === 'open')} />}
     </div>
   );
 }
@@ -303,16 +302,43 @@ function Lyrics({ id, s, editable }: { id: string; s: SnapshotView; editable: bo
     </div>
   );
 }
-function Approve({ id, open }: { id: string; open: RequiredInput[] }) {
+// Changed by Lightning Learning Studios, 2026-10-07: open questions block approval too, and the bar lists them.
+function Approve({ id, open, questions }: { id: string; open: RequiredInput[]; questions: OpenQuestion[] }) {
   const [err, setErr] = useState(''), [busy, setBusy] = useState(false);
   const go = async () => { setErr(''); setBusy(true); try { await api.approve(id); } catch (e) { setErr((e as Error).message); } setBusy(false); };
+  const blocked = open.length > 0 || questions.length > 0;
   return (
     <div className="approve-bar">
-      <div className="grow"><b>{open.length ? `還差 ${open.length} 項素材` : '企劃看起來 OK 嗎？'}</b>
-        <div className="small muted">{err || (open.length ? `請先提供或略過：${open.map((r) => r.label || r.id).join('、')}` : '有意見就在右邊說，AI 改完再給你看；核准後才開始生成。')}</div></div>
+      <div className="grow"><b>{open.length ? `還差 ${open.length} 項素材` : questions.length ? `還有 ${questions.length} 個問題沒回答` : '企劃看起來 OK 嗎？'}</b>
+        <div className="small muted">{err || (open.length ? `請先提供或略過：${open.map((r) => r.label || r.id).join('、')}` : questions.length ? `請先回答或略過這些問題：${questions.map((q, i) => `${i + 1}. ${q.text}`).join(' ')}` : '有意見就在右邊說，AI 改完再給你看；核准後才開始生成。')}</div></div>
       {open.length > 0 && <button className="btn" onClick={() => document.getElementById('required-inputs')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><I n="up" />去提供</button>}
-      <button className="btn primary lg" disabled={open.length > 0 || busy} onClick={go}>{busy ? <span className="spin-ring" /> : <I n="play" />}核准並開始生成</button>
+      {!open.length && questions.length > 0 && <button className="btn" onClick={() => document.getElementById('open-questions')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><I n="up" />去回答</button>}
+      <button className="btn primary lg" disabled={blocked || busy} onClick={go}>{busy ? <span className="spin-ring" /> : <I n="play" />}核准並開始生成</button>
     </div>
+  );
+}
+
+// Lightning: each open question can be answered in the chat (the director records the answer) or dismissed by a person,
+// who gives a name and a reason. Approval waits until none is open.
+function OpenQuestions({ id, qs, review, onTag }: { id: string; qs: OpenQuestion[]; review: boolean; onTag: (t: Tag) => void }) {
+  const [form, setForm] = useState<string | null>(null), [by, setBy] = useState(''), [reason, setReason] = useState(''), [err, setErr] = useState(''), [busy, setBusy] = useState(false);
+  const dismiss = async (key: string) => { setErr(''); setBusy(true); try { await api.dismissQuestion(id, key, by, reason); setForm(null); setReason(''); } catch (e) { setErr((e as Error).message); } setBusy(false); };
+  return (
+    <section className="card" id="open-questions"><div className="card-h"><h2>需要你決定</h2></div>
+      <div className="list">{qs.map((q) => <div key={q.key} className="li" style={{ flexWrap: 'wrap' }}>
+        <div className={`li-ico ${q.status === 'open' ? 'accent' : 'ok'}`}><I n={q.status === 'open' ? 'bubble' : 'check'} /></div>
+        <div className="grow">{q.text}
+          {q.status === 'answered' && <div className="small muted">{`已回答：${q.answer}`}</div>}
+          {q.status === 'dismissed' && <div className="small muted">{`已略過（${q.by}：${q.reason}）`}</div>}</div>
+        {review && q.status === 'open' && <><button className="btn sm plain" onClick={() => onTag({ q: q.text })}>回答</button>
+          <button className="btn sm plain" onClick={() => { setForm(form === q.key ? null : q.key); setErr(''); }}>略過這題</button></>}
+        {form === q.key && <div className="row" style={{ width: '100%', gap: 8, marginTop: 8 }}>
+          <input className="q-in" placeholder="你的名字" value={by} onChange={(e) => setBy(e.target.value)} />
+          <input className="q-in grow" placeholder="為什麼不用回答" value={reason} onChange={(e) => setReason(e.target.value)} />
+          <button className="btn sm primary" disabled={busy || !by.trim() || !reason.trim()} onClick={() => dismiss(q.key)}>確定略過</button>
+          {err && <span className="small muted">{err}</span>}</div>}
+      </div>)}</div>
+    </section>
   );
 }
 

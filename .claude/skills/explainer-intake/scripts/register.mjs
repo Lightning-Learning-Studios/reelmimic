@@ -54,7 +54,15 @@ if (cmd === 'doctor') {
 }
 if (!out || !['start', 'watch', 'check'].includes(cmd)) { console.error('Usage: node register.mjs doctor | start <out> | watch <out> [--stop-at-production] | check <out>'); process.exit(1); }
 
+// The intake's own open questions (intake.md "## Open questions"): a "- [ ]" line is still open.
+const intakeQuestions = () => {
+  const f = join(out, 'intake', 'intake.md'), sec = existsSync(f) ? (read(f).split(/^## /m).find((x) => /^Open questions/i.test(x)) || '') : '';
+  return sec.split('\n').filter((l) => /^\s*[-*]\s*\[\s\]\s*\S/.test(l) && !/<question>/.test(l)).map((l) => l.replace(/^\s*[-*]\s*\[\s\]\s*/, ''));
+};
+
 if (cmd === 'start') {
+  const openQs = intakeQuestions();
+  if (openQs.length) { console.error(`Not handing off: ${openQs.length} open question(s) in intake/intake.md. Answer each one, or have the person dismiss it with their name and a reason:\n` + openQs.map((q, i) => `${i + 1}. ${q}`).join('\n')); process.exit(1); }
   const H = json(join(out, 'handoff', 'handoff.json')), brief = read(join(out, 'handoff', 'brief.md'));
   const server = flag('--server') || H.server || 'http://localhost:4318';
   const projects = resolve(flag('--projects') || process.env.REELMIMIC_PROJECTS || join(ROOT, 'projects'));
@@ -117,7 +125,8 @@ if (cmd === 'watch') {
     }
     if (stage === 'plan_review' && !stop) {
       const open = (snap.requiredInputs || []).filter((r) => r.status === 'missing');
-      console.log(`Plan ready for review: ${S.url}${open.length ? '\nStill needed before approval (give it or skip it): ' + open.map((r) => r.label || r.id).join(', ') : ''}`);
+      const qs = (snap.openQuestions || []).filter((q) => q.status === 'open');
+      console.log(`Plan ready for review: ${S.url}${open.length ? '\nStill needed before approval (give it or skip it): ' + open.map((r) => r.label || r.id).join(', ') : ''}${qs.length ? `\nOpen questions (approval waits until each is answered in the chat or dismissed by the person):\n` + qs.map((q, i) => `${i + 1}. ${q.text}`).join('\n') : ''}`);
       process.exit(0);
     }
     if (stage === 'error' && !stoppedAt) { console.log(`Stopped with an error: ${en(j.error)}. Fix it, then click "Retry this step" in the web app.`); if (!stop) process.exit(1); }

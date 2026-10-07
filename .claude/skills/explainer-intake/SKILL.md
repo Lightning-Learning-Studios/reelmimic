@@ -115,6 +115,8 @@ Name things the way a plan would draw them (`bar chart`, not `bar`, which also m
 
 ## Step 7. Hand off to reelmimic
 
+Do not hand off while any of your own questions is open. Every question you could not settle (from the interview, a conflict, a `needs_source` you kept, a gate) goes under `## Open questions` in `intake/intake.md` as `- [ ] <question>`. Each one ends as `- [x] <question>: <answer>` or, when the person says it needs no answer, `- [dismissed by <name>: <reason>] <question>`. `register.mjs start` refuses while any `- [ ]` line is left and lists them.
+
 1. Write `handoff/brief.md` from `brief.template.md` here. It carries the approved script word for word, the approved storyboard, the on-screen rules word for word, the brand-wins rule, the claims rule, the client's terms, and the planning limits (no voice, music or image generation before approval).
 2. Write `handoff/handoff.json`:
    `{ "title": "...", "lang": "en", "agent": "claude", "reference": "<example video path or null>", "inputs": ["<brand DESIGN.md>", "<logo>", "<fonts>", "intake/script.md", "intake/storyboard.md", "intake/evidence.md"] }`
@@ -127,7 +129,9 @@ Name things the way a plan would draw them (`bar chart`, not `bar`, which also m
 
 ## Step 8. Plan review
 
-Tell the person: open the link, look at the plan and the style frames, send changes in the chat on the right, and click **Approve and start** when it is right.
+Tell the person: open the link, look at the plan and the style frames, and send changes in the chat on the right.
+
+Then read the plan's open questions (`register.mjs watch` prints them at plan review). reelmimic refuses Approve while any is open. Ask the person each one with AskUserQuestion. Send each answer in the plan chat, so the director records it with the question; or, when the person says a question needs no answer, have them click **Dismiss** next to it and give their name and the reason. Only when none is open, tell them to click **Approve and start**. Never tell the person to approve past an open question.
 
 With `--stop-before-production`, run `register.mjs watch <out> --stop-at-production` before the person approves. The moment production starts it stops the job with reelmimic's own Cancel, so nothing is rendered.
 

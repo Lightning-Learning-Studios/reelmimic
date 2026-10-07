@@ -28,6 +28,13 @@ stop_before_production: false
 
 ## Notes from the person
 
+## Open questions
+
+One line each. Hand-off waits until none is `- [ ]`.
+- [ ] <question>
+- [x] <question>: <the answer, in the person's words>
+- [dismissed by <name>: <reason>] <question>
+
 ## Conflicts
 
 | What | Sources | Resolution | How (auto or asked) |

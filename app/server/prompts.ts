@@ -3,7 +3,8 @@
 // Changed by Lightning Learning Studios, 2026-10-07 (explainer-intake): replan takes a "[frames only]" message, and
 // assemble and critique skip compare.py when there is no reference video.
 // Changed by Lightning Learning Studios, 2026-10-07: agents work inside their own project folder, so skill paths are
-// absolute and no prompt points at the repo root or at other projects; the brief's on-screen rules are hard (ONSCREEN).
+// absolute and no prompt points at the repo root or at other projects; the brief's on-screen rules are hard (ONSCREEN);
+// answered open questions are recorded with their answer (ANSWERS).
 import { join } from 'node:path';
 import type { Lang } from '../shared/types.ts';
 import type { BaseVars, Prompts } from './types.ts';
@@ -42,6 +43,11 @@ every shot it names as shots[].rules (the rule line as a string, for example "R1
 shot's summary, action, reads and text_overlay so the rule holds: never draw or write a "never" thing, no digit in on-screen
 text under no-numerals, no stated number (not even "about 18") of a no-count thing, exactly n of an "exactly" thing. A rule
 wins over the reference video and your own layout ideas. If one cannot hold, ask in open_questions; never drop or soften it.`;
+
+// Lightning: open questions block approval until answered or dismissed, so an answer must be recorded, not deleted.
+const ANSWERS = `Open questions block approval. When the person answers one (in this message or earlier), keep that item in
+plan.open_questions as { "question": "<the question>", "answer": "<their answer, in their words>" }; never delete an
+unanswered question, and add a new one only for a decision only the person can make.`;
 
 const LANG_NAME: Record<Lang, string> = { 'zh-TW': '繁體中文', en: 'English', 'zh-CN': '简体中文' };
 
@@ -111,6 +117,7 @@ ${p.brief}
    **不要自己下載**：接下來有一個素材 agent 同時去抓。旁白片要先生成旁白草稿、用真實長度排每鏡時間（這一步你自己做）。
 7. 風格定調畫面：這一輪不用做；在 plan.style_frames 先寫好 3–4 個要畫的畫面（路徑 out/check/style_<n>.jpg，對應哪一鏡、要表現什麼），角色與素材好了之後你會接著畫。
 8. open_questions 只放真的需要使用者決定的事（最多 4 個），缺素材的事寫在 required_inputs、不要只寫在問題裡。
+   ${ANSWERS}
 ${ONSCREEN}`,
 
   // ---------- pre-production helpers that run in parallel after the plan core ----------
@@ -152,6 +159,7 @@ ${p.message}
 
 修改 plan.json 與 STORYBOARD.md（version +1，changelog），必要時補抓素材、重畫受影響的定調畫面。不要開始生成。
 ${ONSCREEN}
+${ANSWERS}
 If the message starts with [frames only]: do not change shots, narration or timing. Only paint the style frames listed in plan.style_frames (out/check/style_<n>.jpg, drawn in code), fetch any to_fetch images, and update style_frames and assets in plan.json.逐條回報怎麼處理；做不到的直說並給替代方案。`,
 
   // ---------- production: setup → cast gate → shot line → assemble ----------

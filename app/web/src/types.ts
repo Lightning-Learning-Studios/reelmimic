@@ -1,6 +1,7 @@
 // Web-only views of the agent-written JSON that shared/types.ts leaves open (plan shots, report, critique, lyrics…).
 // Only the fields the UI reads; everything is optional unless the page can't render without it.
-import type { Snapshot, Plan, PlanCharacter, ChatMessage } from '../../shared/types.ts';
+// Changed by Lightning Learning Studios, 2026-10-07: open questions may carry an answer.
+import type { Snapshot, Plan, PlanCharacter, PlanQuestion, ChatMessage } from '../../shared/types.ts';
 
 export type Camera = { move: string; lens?: number | string; from?: { fill?: number | null }; to?: { fill?: number | null }; pace?: string };
 export type Shot = {
@@ -18,7 +19,7 @@ export interface PlanView extends Plan {
   characters?: (PlanCharacter & { design?: string; arc?: string })[];
   shots?: Shot[];
   assets?: PlanAsset[];
-  open_questions?: string[];
+  open_questions?: PlanQuestion[];   // Lightning: an answered question is { question, answer }
   changelog?: string[];
 }
 

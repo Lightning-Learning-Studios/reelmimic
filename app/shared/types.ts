@@ -1,6 +1,7 @@
 // Shapes shared by the server and the web app: job.json, the project snapshot, live events.
 // Files written by agents (plan.json, reviews, critique…) follow CONTRACT.md; only the fields the app reads are typed here.
-// Changed by Lightning Learning Studios, 2026-10-07: Job.brand (the brand folder a job's agents may read).
+// Changed by Lightning Learning Studios, 2026-10-07: Job.brand (the brand folder a job's agents may read); open questions
+// that block approval until answered or dismissed (Job.questions, Snapshot.openQuestions).
 
 export type AgentKind = 'claude' | 'codex';
 export type Lang = 'zh-TW' | 'en' | 'zh-CN';
@@ -104,6 +105,7 @@ export interface Job {
   needs: Need[];
   waived: string[];
   provided?: Record<string, string[]>;   // required input id → files uploaded for it
+  questions?: Record<string, QuestionDismissal>;   // Lightning: open question key → who dismissed it and why
   pipeline: Pipeline;
   pendingNotes?: string[];
   retryPending?: boolean;
@@ -132,6 +134,12 @@ export interface RequiredInput extends RequiredInputSpec {
   files: string[];
 }
 
+// Lightning: plan.open_questions items are strings or { id?, question, answer? }. Approval waits until each one is answered
+// (the plan records an answer) or dismissed by a person, who gives a name and a reason.
+export type PlanQuestion = string | { id?: string; question?: string; text?: string; answer?: string };
+export interface QuestionDismissal { by: string; reason: string; at: string }
+export interface OpenQuestion { key: string; text: string; status: 'open' | 'answered' | 'dismissed'; answer?: string; by?: string; reason?: string; at?: string }
+
 export interface PlanCharacter { id: string; name?: string; file?: string; [k: string]: unknown }
 
 export interface Plan {
@@ -141,6 +149,7 @@ export interface Plan {
   music?: { file?: string; section?: { start_s?: number; end_s?: number } };
   characters?: PlanCharacter[];
   assets?: { status?: string; [k: string]: unknown }[];
+  open_questions?: PlanQuestion[];
   [k: string]: unknown;
 }
 
@@ -181,6 +190,7 @@ export interface Snapshot {
   production: Record<string, unknown> | null;
   lyrics: unknown;
   requiredInputs: RequiredInput[];
+  openQuestions: OpenQuestion[];
   rounds: { values: Rounds; defaults: Rounds; min: number; max: number };
   inputs: string[];
 }

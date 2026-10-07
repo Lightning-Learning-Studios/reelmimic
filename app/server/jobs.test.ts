@@ -86,6 +86,39 @@ describe('required inputs', () => {
   });
 });
 
+// Lightning Learning Studios, 2026-10-07: open questions block approval until answered or dismissed by a person.
+describe('open questions', () => {
+  let id: string;
+  before(() => {
+    id = newJob({ lang: 'en' }).id;
+    writePlan(id, { open_questions: ['Is the brand file final?', { id: 'music', question: 'Which music bed?' }, { question: 'Retime to the recording?', answer: 'Yes, within 20 percent' }] });
+  });
+  const status = () => Object.fromEntries(J.snapshot(id).openQuestions.map((q) => [q.key, q.status]));
+
+  test('unanswered questions are open, an answered one is not', () => {
+    assert.deepEqual(status(), { 'Is the brand file final?': 'open', music: 'open', 'Retime to the recording?': 'answered' });
+  });
+  test('approval is refused while any is open, with a plain English list', async () => {
+    assert.equal(J.approvalBlock(id)?.error, 'Answer or dismiss these 2 open questions before approval: 1. Is the brand file final? 2. Which music bed?');
+    await assert.rejects(J.approve(id), (e: Error & { code?: number }) => e.code === 409 && /Which music bed\?/.test(e.message));
+  });
+  test('dismissing needs a name and a reason, and records both', () => {
+    assert.throws(() => J.dismissQuestion(id, 'music', 'Sam', ''), /reason/);
+    assert.throws(() => J.dismissQuestion(id, 'music', '', 'not needed'), /name/);
+    assert.throws(() => J.dismissQuestion(id, 'no such question', 'Sam', 'x'), /no such question/);
+    const q = J.dismissQuestion(id, 'music', 'Sam', 'No music in this cut').openQuestions.find((x) => x.key === 'music');
+    assert.equal(q?.status, 'dismissed');
+    assert.equal(q?.by, 'Sam');
+    assert.equal(q?.reason, 'No music in this cut');
+    assert.equal(J.load(id).questions?.music?.by, 'Sam');
+  });
+  test('once every question is answered or dismissed, nothing blocks approval', () => {
+    assert.equal(J.approvalBlock(id)?.error, 'Answer or dismiss this open question before approval: 1. Is the brand file final?');
+    writePlan(id, { open_questions: [{ question: 'Is the brand file final?', answer: 'Yes' }, { id: 'music', question: 'Which music bed?' }, { question: 'Retime to the recording?', answer: 'Yes, within 20 percent' }] });
+    assert.equal(J.approvalBlock(id), null);
+  });
+});
+
 describe('restart recovery', () => {
   test('a job that was working is marked interrupted, a finished one is left alone', () => {
     const working = newJob().id, done = newJob().id;

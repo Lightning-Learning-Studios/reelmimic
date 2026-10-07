@@ -1,7 +1,7 @@
 // ReelMimic server: REST + SSE over the job machine in jobs.ts, and static files (the built UI and project files).
 //   node server/index.ts             → http://localhost:4318
-// Changed by Lightning Learning Studios, 2026-10-07: the approve refusal is in English for English projects; a new project
-// may name a brand folder its agents can read.
+// Changed by Lightning Learning Studios, 2026-10-07: the approve refusal is in English for English projects and also lists
+// open questions; a person can dismiss an open question; a new project may name a brand folder its agents can read.
 import './env.ts';   // first: API keys / tool paths from ~/.reelmimic/secrets.json
 import express, { type Request, type Response } from 'express';
 import multer from 'multer';
@@ -82,13 +82,20 @@ const act = (fn: (id: string, text: string, meta: J.MessageMeta) => unknown) => 
 };
 app.post('/api/projects/:id/message', (req, res) => { if (!(req.body?.text || '').trim() && !(req.body?.meta?.attachments || []).length) return res.status(400).json({ error: 'empty' }); act(J.message)(req, res); });
 // Approve: blocked (409) while a required input is open — production never starts without it.
+// Changed by Lightning Learning Studios, 2026-10-07: also blocked while an open question is neither answered nor dismissed;
+// the refusal lists what is open, in English for English projects.
 app.post('/api/projects/:id/approve', (req, res) => {
   const { id } = req.params; if (!guard(res, id)) return;
   if (J.busy(id)) return res.status(409).json({ error: 'agent 正在工作中，請等這一輪完成' });
-  const open = J.openInputs(id);
-  // Changed by Lightning Learning Studios, 2026-10-07: English projects get this refusal in English.
-  if (open.length) return res.status(409).json({ error: J.load(id).lang === 'en' ? 'Still needed before approval (give it or skip it): ' + open.map((r) => r.label || r.id).join(', ') : '還有需要你提供或略過的素材：' + open.map((r) => r.label || r.id).join('、'), open });
+  const block = J.approvalBlock(id);
+  if (block) return res.status(409).json(block);
   J.approve(id).catch((e) => console.error(e)); res.json({ ok: true });
+});
+// Lightning: a person dismisses an open question: { question: <key>, by: <name>, reason: <why> }
+app.post('/api/projects/:id/questions/dismiss', (req, res) => {
+  const { id } = req.params; if (!guard(res, id)) return;
+  try { res.json(J.dismissQuestion(id, String(req.body?.question || ''), String(req.body?.by || ''), String(req.body?.reason || ''))); }
+  catch (e) { res.status(400).json({ error: (e as Error).message }); }
 });
 // Lyrics: the user pastes the text; the server times it against the plan's music section.
 app.post('/api/projects/:id/lyrics', async (req, res) => {

@@ -53,3 +53,12 @@ test('a lost storyboard change fails with the rule and the shot (live test 1: tw
   assert.equal(r.code, 1);
   assert.deepEqual(r.fails, ['FAIL  on-screen R1 (S1): a handful of dots, no count shown -- states a count: "12 dots" in "12 dots light gold"']);
 });
+
+test('start refuses to hand off while the intake has an open question', () => {
+  const out = intake();
+  writeFileSync(join(out, 'intake', 'intake.md'), '---\nclient: ""\n---\n\n## Open questions\n\n- [ ] Is the brand file final?\n- [x] Who narrates?: Sam\n- [dismissed by Sam: not needed] Music?\n\n## Conflicts\n');
+  const r = spawnSync(process.execPath, [REGISTER, 'start', out], { encoding: 'utf8' });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /Not handing off: 1 open question\(s\) in intake\/intake\.md[\s\S]*1\. Is the brand file final\?/);
+  assert.doesNotMatch(r.stderr, /Who narrates|Music/);
+});

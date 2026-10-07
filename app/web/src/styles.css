@@ -643,3 +643,6 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -.022e
 .rd-foot { display: flex; align-items: flex-end; gap: 10px; }
 .rd-foot .rd-note { flex: 1; }
 .rd-foot .btn { flex: none; }
+
+/* Changed by Lightning Learning Studios, 2026-10-07: name and reason fields for dismissing an open question */
+.q-in { height: 32px; min-width: 0; border: 0; outline: 0; border-radius: 9px; background: var(--fill-2); padding: 0 10px; font-size: 13px; color: var(--label); }

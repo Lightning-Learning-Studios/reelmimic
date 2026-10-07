@@ -58,6 +58,7 @@ const EN: Record<string, string> = {
   '分鏡與運鏡': 'Storyboard & camera', '顯示全部': 'Show all', '動作': 'Action', '運鏡': 'Camera', '對照參考': 'Reference shot', '轉場': 'Transition',
   '觀眾讀到': 'Viewer reads', '字幕／字卡': 'Captions / cards', '授權紀錄': 'License log', '需要你決定': 'Your call', '回答': 'Answer', '修改紀錄：': 'Changelog: ',
   '你提供的': 'Provided by you', '待抓取': 'To fetch', '網路取得': 'Fetched online', '程式繪製': 'Drawn in code', '待生成': 'To generate', '原創': 'Original', '授權未填': 'No license info',
+  '略過這題': 'Dismiss', '你的名字': 'Your name', '為什麼不用回答': 'Why it needs no answer', '確定略過': 'Dismiss it', '去回答': 'Go answer',   // Lightning
   '需要你提供的素材': 'Inputs only you can provide', '全部提供或略過之後才能核准，生產中不會再卡在這裡。': 'Provide or skip each one before approving — production will not stall on them later.',
   '已提供': 'Provided', '已略過': 'Skipped', '上傳': 'Upload', '略過': 'Skip', '上傳檔案': 'Upload files', '上傳中': 'Uploading',
   '歌詞': 'Lyrics', '音檔': 'Audio', '圖片': 'Image', '文字': 'Text', '檔案': 'File', '歌詞字幕': 'Lyric subtitles',
@@ -129,6 +130,9 @@ const EN_RE: [RegExp, string][] = [
   [/^還有需要你提供或略過的素材：(.+)$/, 'Still needs your input or a skip: $1'],
   [/^· 預設 (\d+)$/, '· default $1'], [/^· 第 (\d+) \/ (\d+) 輪$/, '· round $1 / $2'],
   [/^需要你提供 (\d+) 項素材$/, 'Needs $1 input(s) from you'],
+  // Lightning Learning Studios, 2026-10-07: open questions
+  [/^還有 (\d+) 個問題沒回答$/, '$1 open question(s)'], [/^請先回答或略過這些問題：(.+)$/, 'Answer or dismiss these questions first: $1'],
+  [/^已回答：(.+)$/, 'Answered: $1'], [/^已略過（(.+?)：(.+)）$/, 'Dismissed by $1: $2'],
   [/^速度 (.+)$/, 'pace $1'], [/^主體 (.+)$/, 'subject $1'], [/^進：(.+)$/, 'in: $1'], [/^出：(.+)$/, 'out: $1'], [/^評審：(.+)$/, 'Critic: $1'],
 ];
 

@@ -1,4 +1,5 @@
 // Thin client for the ReelMimic server.
+// Changed by Lightning Learning Studios, 2026-10-07: dismissQuestion.
 import type { AgentStatus, Config, ProjectSummary, RoundKey, ServerEvent, Snapshot } from '../../shared/types.ts';
 import type { MessageMeta } from './types.ts';
 type Ok = { ok: true };
@@ -15,6 +16,8 @@ export const api = {
   lyrics: (id: string, text: string) => fetch(`/api/projects/${id}/lyrics`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) }).then(j<{ ok: boolean; aligned: boolean; report?: unknown }>),
   unwaive: (id: string, input: string) => fetch(`/api/projects/${id}/unwaive`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input }) }).then(j<Snapshot>),
   waive: (id: string, input: string) => fetch(`/api/projects/${id}/waive`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input }) }).then(j<Snapshot>),
+  // Lightning: dismiss an open question (a name and a reason are required)
+  dismissQuestion: (id: string, question: string, by: string, reason: string) => fetch(`/api/projects/${id}/questions/dismiss`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, by, reason }) }).then(j<Snapshot>),
   config: () => fetch('/api/config').then(j<Config>),
   settings: (id: string, body: Partial<Record<RoundKey, number | ''>>) => fetch(`/api/projects/${id}/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(j<Snapshot>),
   accept: (id: string) => fetch(`/api/projects/${id}/accept`, { method: 'POST' }).then(j<Ok>),

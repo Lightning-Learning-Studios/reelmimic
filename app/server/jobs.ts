@@ -2,13 +2,14 @@
 // write the files in CONTRACT.md. A step advances only when its output files exist.
 //
 //   new → analyzing → styling → planning → plan_review ⇄ replanning
-//       → [approve: required inputs must be provided or waived]
+//       → [approve: required inputs must be provided or waived, open questions answered or dismissed]
 //       → producing:  setup (director) → CAST GATE (cast_qa ⇄ cast_fix) → SHOT LINE (N builders in parallel; every chunk
 //                     is reviewed by a fresh shot_qa as soon as it is built ⇄ fix_chunk) → assemble (director)
 //       → critiquing: final panel (fresh critic: continuity/pacing/seams, verifies earlier fixes) ⇄ revising
 //       → done   (needs_user items never trigger a revise: they pause the job and ask the user)
 // Quality is checked where defects are born (each character, each chunk), not only at the end.
 // Changed by Lightning Learning Studios, 2026-10-07: agents are scoped to their job folder (agentScope); see the notes there.
+// Approval also waits for every open question to be answered or dismissed by a person (approvalBlock).
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, cpSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -16,7 +17,7 @@ import { EventEmitter } from 'node:events';
 import { runAgent, type AgentResult, type AgentScope } from './agents/index.ts';
 import { prompts as bootPrompts } from './prompts.ts';
 import { ROUND_KEYS } from '../shared/types.ts';
-import type { AgentKind, CastCharProgress, ChatMessage, ChunkProgress, Config, EngineSnapshot, Job, Lang, LogEntry, LogEvent, Need, NeedRequest, Pipeline, Plan, ProjectSummary, Reference, RequiredInput, Review, RoundKey, Rounds, Snapshot, Stage } from '../shared/types.ts';
+import type { AgentKind, CastCharProgress, ChatMessage, ChunkProgress, Config, EngineSnapshot, Job, Lang, LogEntry, LogEvent, Need, NeedRequest, OpenQuestion, Pipeline, Plan, PlanQuestion, ProjectSummary, Reference, RequiredInput, Review, RoundKey, Rounds, Snapshot, Stage } from '../shared/types.ts';
 import type { CastMember, Chunk, ChunkReview, Critique, Phase, Production, Prompts, SharedItem, ShotEntry, StepVars } from './types.ts';
 export { ROUND_KEYS };
 // prompts.ts is re-imported when it changes, so prompt fixes reach the next agent turn without restarting running jobs
@@ -137,6 +138,7 @@ export function snapshot(id: string): Snapshot {
     production: readJSON(join(d, 'build', 'production.json')),
     lyrics: readJSON(join(d, 'analysis', 'lyrics', 'subs.json')),
     requiredInputs: requiredInputs(id, plan, job),
+    openQuestions: planQuestions(plan, job),
     rounds: { values: rounds(id), defaults: Object.fromEntries(ROUND_KEYS.map((k) => [k, CONFIG[k]])) as Rounds, ...ROUND_RANGE },
     inputs: list('inputs', /./),
   };
@@ -169,6 +171,36 @@ function requiredInputs(id: string, plan: Plan | null, job: Job): RequiredInput[
     else if (r.kind !== 'lyrics' && files.some((f) => f.toLowerCase().includes((r.match || r.id).toLowerCase()))) status = 'provided';
     return { ...r, status, files: given };
   });
+}
+// ---------- open questions (Lightning Learning Studios, 2026-10-07) ----------
+// plan.open_questions must each be answered (the director records { question, answer } after the person replies in chat)
+// or dismissed by a person with a name and a reason before the plan can be approved.
+const qText = (q: PlanQuestion) => (typeof q === 'string' ? q : q?.question || q?.text || '').trim();
+const qKey = (q: PlanQuestion) => (typeof q === 'object' && q?.id) || qText(q).replace(/\s+/g, ' ');
+function planQuestions(plan: Plan | null, job: Job): OpenQuestion[] {
+  return (plan?.open_questions || []).filter((q) => qText(q)).map((q) => {
+    const key = qKey(q), text = qText(q), answer = typeof q === 'object' ? (q.answer || '').trim() : '', d = job.questions?.[key];
+    if (answer) return { key, text, status: 'answered', answer };
+    if (d) return { key, text, status: 'dismissed', ...d };
+    return { key, text, status: 'open' };
+  });
+}
+export function openQuestions(id: string) { return snapshot(id).openQuestions.filter((q) => q.status === 'open'); }
+// A person dismisses an open question: their name and the reason are kept in job.json. Throws on a missing name or reason.
+export function dismissQuestion(id: string, key: string, by: string, reason: string) {
+  if (!String(by || '').trim() || !String(reason || '').trim()) throw new Error(L(id, '請寫你的名字和略過的理由', 'Give your name and the reason for dismissing it'));
+  if (!snapshot(id).openQuestions.some((q) => q.key === key)) throw new Error(L(id, '企劃裡沒有這個問題', 'The plan has no such question'));
+  update(id, (j) => { j.questions = { ...(j.questions || {}), [key]: { by: by.trim(), reason: reason.trim(), at: now() } }; });
+  return snapshot(id);
+}
+// The refusal shown on Approve, in plain words
+export function approvalBlock(id: string) {
+  const inputs = openInputs(id), qs = openQuestions(id), en = load(id).lang === 'en';
+  const parts = [
+    ...(inputs.length ? [en ? 'Still needed before approval (give it or skip it): ' + inputs.map((r) => r.label || r.id).join(', ') : '還有需要你提供或略過的素材：' + inputs.map((r) => r.label || r.id).join('、')] : []),
+    ...(qs.length ? [en ? `Answer or dismiss ${qs.length === 1 ? 'this open question' : `these ${qs.length} open questions`} before approval: ` + qs.map((q, i) => `${i + 1}. ${q.text}`).join(' ') : `還有 ${qs.length} 個問題沒回答（回答或略過之後才能核准）：` + qs.map((q, i) => `${i + 1}. ${q.text}`).join(' ')] : []),
+  ];
+  return parts.length ? { error: parts.join(en ? '. ' : '。'), open: inputs, questions: qs } : null;
 }
 export function openInputs(id: string) { const s = snapshot(id); return s.requiredInputs.filter((r) => r.status === 'missing'); }
 export function waive(id: string, inputId: string) { update(id, (j) => { j.waived = [...new Set([...(j.waived || []), inputId])]; j.needs = (j.needs || []).filter((n) => n.input !== inputId); }); }
@@ -407,8 +439,8 @@ function snapshotEngine(id: string): EngineSnapshot | null {
 }
 
 export async function approve(id: string) {
-  const open = openInputs(id);
-  if (open.length) throw Object.assign(new Error('還有需要你提供或略過的素材：' + open.map((r) => r.label || r.id).join('、')), { code: 409 });
+  const block = approvalBlock(id);   // Lightning: open questions block approval too
+  if (block) throw Object.assign(new Error(block.error), { code: 409 });
   await alignIfReady(id).catch(() => null);   // lyrics pasted before the music arrived: time them now, before anything is built
   update(id, (j) => { j.approvedAt = now(); j.approvedPlanVersion = readJSON<Plan>(join(dirOf(id), 'plan.json'))?.version; j.engineSnapshot = snapshotEngine(id); j.pipeline = {}; j.sessions = j.approvedAtPrev ? {} : Object.fromEntries(Object.entries(j.sessions || {}).filter(([k]) => k.startsWith('cast-'))); j.approvedAtPrev = true; j.needs = []; j.userNote = null; });
   chat(id, 'system', L(id, `企劃已核准，開始生產：角色關 → 分段製作（每段做完立刻審）→ 組裝 → 最後評審`, 'Plan approved. Production: characters → parts built and reviewed as they finish → assembly → final review'));
