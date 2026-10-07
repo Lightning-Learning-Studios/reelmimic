@@ -8,11 +8,12 @@
 //       → critiquing: final panel (fresh critic: continuity/pacing/seams, verifies earlier fixes) ⇄ revising
 //       → done   (needs_user items never trigger a revise: they pause the job and ask the user)
 // Quality is checked where defects are born (each character, each chunk), not only at the end.
+// Changed by Lightning Learning Studios, 2026-10-07: agents are scoped to their job folder (agentScope); see the notes there.
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, cpSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { runAgent, type AgentResult } from './agents/index.ts';
+import { runAgent, type AgentResult, type AgentScope } from './agents/index.ts';
 import { prompts as bootPrompts } from './prompts.ts';
 import { ROUND_KEYS } from '../shared/types.ts';
 import type { AgentKind, CastCharProgress, ChatMessage, ChunkProgress, Config, EngineSnapshot, Job, Lang, LogEntry, LogEvent, Need, NeedRequest, Pipeline, Plan, ProjectSummary, Reference, RequiredInput, Review, RoundKey, Rounds, Snapshot, Stage } from '../shared/types.ts';
@@ -141,10 +142,10 @@ export function snapshot(id: string): Snapshot {
   };
 }
 
-export function createJob({ id, title, agent, brief, reference, lang = 'zh-TW', settings = {} }: { id: string; title: string; agent: AgentKind; brief: string; reference: Reference; lang?: Lang; settings?: Partial<Rounds> }) {
+export function createJob({ id, title, agent, brief, reference, lang = 'zh-TW', settings = {}, brand = null }: { id: string; title: string; agent: AgentKind; brief: string; reference: Reference; lang?: Lang; settings?: Partial<Rounds>; brand?: string | null }) {
   const d = dirOf(id); mkdirSync(join(d, 'inputs'), { recursive: true }); mkdirSync(join(d, 'analysis'), { recursive: true });
   writeFileSync(join(d, 'brief.md'), brief || '');
-  const job: Job = { id, title, agent, lang, reference, settings, stage: 'new', sessionId: null, sessions: {}, createdAt: now(), chat: [], log: [], needs: [], waived: [], pipeline: {} };
+  const job: Job = { id, title, agent, lang, reference, settings, brand, stage: 'new', sessionId: null, sessions: {}, createdAt: now(), chat: [], log: [], needs: [], waived: [], pipeline: {} };
   save(job);
   return job;
 }
@@ -255,7 +256,8 @@ interface TurnResult { ok: boolean; text?: string; missing?: string[]; stderr?: 
 async function turn<P extends Phase>(id: string, phase: P, vars: StepVars[P], must: string[], { session = 'director', who }: TurnOpts = {}): Promise<TurnResult> {
   const j = load(id), d = dirOf(id);
   const ac = new AbortController(); if (!running.has(id)) running.set(id, new Set()); running.get(id)!.add(ac);
-  const p = { dir: relative(ROOT, d).replace(/\\/g, '/'), brief: readText(join(d, 'brief.md')) || '', inputs: snapshot(id).inputs, config: CONFIG, lang: j.lang || 'zh-TW', ...vars };
+  // Lightning: the agent works inside the job folder (an absolute path, so prompts never point at the repo root)
+  const p = { dir: d, brief: readText(join(d, 'brief.md')) || '', inputs: snapshot(id).inputs, config: CONFIG, lang: j.lang || 'zh-TW', ...vars };
   const before = must.map((f) => mtime(join(d, f)));
   const sid = session === 'fresh' ? undefined : session === 'director' ? j.sessionId : (j.sessions || {})[session];
   const label = who || (session === 'fresh' ? 'reviewer' : session);
@@ -263,7 +265,7 @@ async function turn<P extends Phase>(id: string, phase: P, vars: StepVars[P], mu
   log(id, { type: 'turn', state: 'start', phase, who: label });
   let r: AgentResult;
   try {
-    r = await runAgent({ kind: j.agent, cwd: ROOT, prompt: (await livePrompts())[phase](p), sessionId: sid, signal: ac.signal,
+    r = await runAgent({ kind: j.agent, cwd: d, scope: agentScope(id), prompt: (await livePrompts())[phase](p), sessionId: sid, signal: ac.signal,
       onEvent: (e) => {
         if (e.type === 'session' && session !== 'fresh') update(id, (jj) => { if (session === 'director') jj.sessionId = e.id; else { jj.sessions = jj.sessions || {}; jj.sessions[session] = e.id; } });
         if (e.type !== 'done') log(id, { ...e, who: label });
@@ -278,6 +280,11 @@ async function turn<P extends Phase>(id: string, phase: P, vars: StepVars[P], mu
   if (load(id).retryPending) update(id, (x) => { delete x.retryPending; });
   if (r.text) chat(id, session === 'fresh' ? 'critic' : session === 'director' ? 'agent' : 'builder', r.text, { phase, who: label });
   return { ok: r.ok && !missing.length, text: r.text, missing, stderr: r.stderr, lastError: r.lastError };
+}
+// Changed by Lightning Learning Studios, 2026-10-07: what this job's agents may reach (agents/index.ts enforces it).
+export function agentScope(id: string): AgentScope {
+  const brand = load(id).brand;
+  return { dir: dirOf(id), projects: PROJECTS, readOnly: [join(ROOT, '.claude'), ...(brand && existsSync(brand) ? [resolve(brand)] : [])] };
 }
 function fail(id: string, stageName: Stage, res: TurnResult) {
   // an account limit is the real cause, even when it also left outputs missing: say so plainly
@@ -353,7 +360,7 @@ export async function message(id: string, text: string, meta: MessageMeta = {}) 
   chat(id, 'user', tagged, meta);
   // chat attachments: the agent gets their paths (images are opened with Read and treated as part of the message)
   const att = (meta.attachments || []).filter((p) => /^inputs\/attachments\/[^/\\]+$/.test(p));
-  if (att.length) tagged += '\n\n使用者附上的檔案（圖片請用 Read 打開來看，當成這則訊息的一部分）：\n' + att.map((p) => `- ${relative(ROOT, join(dirOf(id), p)).split('\\').join('/')}`).join('\n');
+  if (att.length) tagged += '\n\n使用者附上的檔案（圖片請用 Read 打開來看，當成這則訊息的一部分）：\n' + att.map((p) => `- ${p}`).join('\n');
   // before the plan exists: every later step re-reads brief.md; if the plan is already being written, replan once it's done
   if (PRE_PLAN.includes(j.stage)) {
     appendFileSync(join(dirOf(id), 'brief.md'), `\n\n補充（使用者在企劃完成前加的）：${tagged}\n`);

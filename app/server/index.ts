@@ -1,6 +1,7 @@
 // ReelMimic server: REST + SSE over the job machine in jobs.ts, and static files (the built UI and project files).
 //   node server/index.ts             → http://localhost:4318
-// Changed by Lightning Learning Studios, 2026-10-07: the approve refusal is in English for English projects.
+// Changed by Lightning Learning Studios, 2026-10-07: the approve refusal is in English for English projects; a new project
+// may name a brand folder its agents can read.
 import './env.ts';   // first: API keys / tool paths from ~/.reelmimic/secrets.json
 import express, { type Request, type Response } from 'express';
 import multer from 'multer';
@@ -42,7 +43,10 @@ app.post('/api/projects', upload.fields([{ name: 'reference', maxCount: 1 }, { n
   try { settings = Object.fromEntries(Object.entries(J.cleanRounds(req.body)).filter(([, v]) => v != null)); }
   catch (e) { for (const f of Object.values(files || {}).flat()) try { unlinkSync(f.path); } catch {} return res.status(400).json({ error: (e as Error).message }); }
   const id = slug();
-  const job = J.createJob({ id, title: (title || brief.split('\n')[0] || '未命名').slice(0, 40), agent, brief, lang, settings,
+  // Lightning: an optional brand folder (absolute path) that this job's agents may read
+  const brand = typeof req.body.brand === 'string' && req.body.brand.trim() ? resolve(req.body.brand.trim()) : null;
+  if (brand && !existsSync(brand)) { for (const f of Object.values(files || {}).flat()) try { unlinkSync(f.path); } catch {} return res.status(400).json({ error: `brand folder not found: ${brand}` }); }
+  const job = J.createJob({ id, title: (title || brief.split('\n')[0] || '未命名').slice(0, 40), agent, brief, lang, settings, brand,
     reference: ref ? { type: 'file', src: 'inputs/reference' + (extname(ref.originalname) || '.mp4') } : { type: 'url', src: url.trim() } });
   if (ref) renameSync(ref.path, join(J.dirOf(id), job.reference.src));
   for (const f of files?.inputs || []) renameSync(f.path, join(J.dirOf(id), 'inputs', fileName(f)));

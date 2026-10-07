@@ -1,5 +1,6 @@
 // Shapes shared by the server and the web app: job.json, the project snapshot, live events.
 // Files written by agents (plan.json, reviews, critique…) follow CONTRACT.md; only the fields the app reads are typed here.
+// Changed by Lightning Learning Studios, 2026-10-07: Job.brand (the brand folder a job's agents may read).
 
 export type AgentKind = 'claude' | 'codex';
 export type Lang = 'zh-TW' | 'en' | 'zh-CN';
@@ -89,6 +90,7 @@ export interface Job {
   agent: AgentKind;
   lang: Lang;
   reference: Reference;
+  brand?: string | null;   // Lightning: the brand folder this job may read (absolute path)
   settings: Partial<Rounds>;
   stage: Stage;
   failed?: Stage | null;

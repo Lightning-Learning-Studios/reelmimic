@@ -11,7 +11,8 @@ priority: 80
 - 剪接：一句歌詞 ≈ 一個鏡頭（常見 8 拍），每個接縫都有設計過的轉場（筆刷抹過、光圈、布幕、變形接續）
 - 聲音：整首歌驅動節奏，沒有旁白
 - 文字：除了卡拉 OK 字幕外幾乎沒有字；常有「歌詞諧音梗」的視覺笑點
-- 範例：小鎮姑娘（painted-animation 的 examples/xiaozhen）、本專案 projects/zhainan
+- 範例：小鎮姑娘（painted-animation 的 examples/xiaozhen）
+<!-- Changed by Lightning Learning Studios, 2026-10-07: removed the pointer to another project (projects/zhainan); agents stay in their own project. -->
 
 ## 製作預設
 - 1920×1080（直式需求改 1080×1920 構圖但引擎畫布固定 16:9 → 以鏡頭構圖置中、輸出後裁切）、24 fps、預設 30 秒

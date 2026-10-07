@@ -64,7 +64,7 @@ if (cmd === 'start') {
   if (H.reference) {
     // The normal front door: reelmimic analyses the example, picks the style, writes the plan and paints style frames.
     const fd = new FormData();
-    for (const [k, v] of Object.entries({ title: H.title, brief, agent: H.agent || 'claude', lang: H.lang || 'en' })) fd.set(k, v);
+    for (const [k, v] of Object.entries({ title: H.title, brief, agent: H.agent || 'claude', lang: H.lang || 'en', ...(H.brand ? { brand: dirname(at(H.brand)) } : {}) })) fd.set(k, v);
     fd.set('reference', await fs.openAsBlob(at(H.reference)), basename(H.reference));
     for (const p of inputs) fd.append('inputs', await fs.openAsBlob(p), basename(p));
     id = (await api(server, '/api/projects', { method: 'POST', body: fd })).id;
@@ -77,7 +77,7 @@ if (cmd === 'start') {
     id = new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + (H.slug || 'explainer').replace(/[^\w-]+/g, '-').slice(0, 30);
     const d = join(projects, id);
     if (existsSync(join(d, 'job.json'))) { console.error(`A project called ${id} already exists in ${projects}.`); process.exit(1); }
-    J.createJob({ id, title: H.title, agent: H.agent || 'claude', brief, lang: H.lang || 'en', reference: { type: 'file', src: 'inputs/NO_REFERENCE.md' } });
+    J.createJob({ id, title: H.title, agent: H.agent || 'claude', brief, lang: H.lang || 'en', brand: H.brand ? dirname(at(H.brand)) : null, reference: { type: 'file', src: 'inputs/NO_REFERENCE.md' } });
     for (const p of inputs) copyFileSync(p, join(d, 'inputs', basename(p)));
     writeFileSync(join(d, 'inputs', 'NO_REFERENCE.md'), '# No example video\n\nThis project started from explainer-intake with no example video. analysis/report.json does not exist and compare.py does not apply. Judge the film against STORYBOARD.md, plan.json and the brand file in inputs/.\n');
     writeFileSync(join(d, 'analysis', 'STYLE.md'), '2d-vector\n\nNo example video. The look comes from the brand file in inputs/ and the approved storyboard in STORYBOARD.md.\n');

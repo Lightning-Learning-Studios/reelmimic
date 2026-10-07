@@ -2,10 +2,20 @@
 // when those files exist. Same prompts for Claude Code and Codex (skills are referenced by path, no Skill tool needed).
 // Changed by Lightning Learning Studios, 2026-10-07 (explainer-intake): replan takes a "[frames only]" message, and
 // assemble and critique skip compare.py when there is no reference video.
+// Changed by Lightning Learning Studios, 2026-10-07: agents work inside their own project folder, so skill paths are
+// absolute and no prompt points at the repo root or at other projects.
+import { join } from 'node:path';
 import type { Lang } from '../shared/types.ts';
 import type { BaseVars, Prompts } from './types.ts';
 
-const SKILL = '.claude/skills/video-clone';
+const SKILL = join(import.meta.dirname, '..', '..', '.claude', 'skills', 'video-clone').replace(/\\/g, '/');
+const SKILLS = join(SKILL, '..').replace(/\\/g, '/');
+// Lightning: what the agent may touch, said plainly (agents/index.ts enforces it for Claude Code)
+const SCOPE = `Your working directory is this project's folder; relative paths are relative to it. You may read and write only this
+folder, and read the tools in ${SKILLS} (read only) and the brand files in inputs/. Do not list or open other projects or
+the folder that holds them: that is refused. Never look for examples in other projects; learn from the skill files and
+the reference video only. Run render and snapshot commands (npx hyperframes …, node render.mjs, python ${SKILL}/scripts/hf_frames.py …)
+on their own, not joined to cd, && or ; (cd first in a separate command): only then can they start Chrome.`;
 
 const RULES = `規則：使用者在 inputs/ 提供的自家角色可直接照著做；其他角色與畫面原創（不畫知名既有角色、他人吉祥物或品牌）；
 歌詞只能來自使用者提供的文字（inputs/lyrics.txt 或 .lrc；已對時的在 analysis/lyrics/subs.lrc），不要自己寫出、轉錄或引用歌詞；
@@ -28,8 +38,9 @@ const SPEED = `效率規則（不能省略任何檢查，只是不浪費時間�
 
 const LANG_NAME: Record<Lang, string> = { 'zh-TW': '繁體中文', en: 'English', 'zh-CN': '简体中文' };
 
-const HEADER = (p: BaseVars, role = '導演') => `你是「風格克隆影片工作室」的${role} agent，工作目錄是 repo 根目錄。
-本專案資料夾：${p.dir}（以下路徑都相對於它，除非寫明 repo 根目錄）
+const HEADER = (p: BaseVars, role = '導演') => `你是「風格克隆影片工作室」的${role} agent。
+本專案資料夾：${p.dir}（也是你的工作目錄；以下路徑都相對於它）
+${SCOPE}
 先讀：${SKILL}/SKILL.md（流程與規則）與 ${SKILL}/CONTRACT.md（檔案格式，必須照寫）。
 ${process.env.PYTHON && process.env.PYTHON !== 'python' ? `這台電腦的 Python 指令是 \`${process.env.PYTHON}\`：下面（和 skill 文件）寫 python 的地方都用它執行。
 ` : ''}這一輪只做下面指定的步驟，做完就停，最後用 3–6 行${LANG_NAME[p.lang] || '繁體中文'}回報重點（不要貼整份檔案）。${p.lang && p.lang !== 'zh-TW' ? `
@@ -249,7 +260,9 @@ ${ENGINE(p)}
 
   // ---------- final panel ----------
   critique: (p) => `你是這支影片的**獨立評審**（資深美術總監），不是製作者；你沒參與製作，沒有任何理由護短。
-工作目錄是 repo 根目錄；專案資料夾：${p.dir}。先讀 ${SKILL}/SKILL.md 的品質門檻與 engine 的 SKILL.md。
+本專案資料夾：${p.dir}（也是你的工作目錄）。
+${SCOPE}
+先讀 ${SKILL}/SKILL.md 的品質門檻與 engine 的 SKILL.md。
 使用者需求：${p.brief}
 ${RULES}
 
