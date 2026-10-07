@@ -136,6 +136,23 @@ web app (start it first with `./start.sh`), which analyses the example, writes t
 for you at plan review. Add `--stop-before-production` to stop the job the moment production starts. Details:
 [`.claude/skills/explainer-intake/SKILL.md`](.claude/skills/explainer-intake/SKILL.md).
 
+What to expect:
+
+- **On-screen rules.** Every change you ask for at the storyboard gate that concerns what is on screen ("no count
+  shown", "exactly two map pins", "no balance scale in S10") becomes a numbered rule in the brief. The planner must
+  keep each one, and `register.mjs check` fails the plan, naming the rule and the shot, when one is broken.
+- **Open questions block approval.** The skill will not hand off while one of its own questions is open, and the web
+  app will not approve a plan while any open question is unanswered. Answer it in the chat, or click **Dismiss** next
+  to it and give your name and the reason. The Approve bar lists what is still open.
+- **No characters, no cast sheet.** A plan with no characters, or only simple icon people, skips the character rig
+  and the cast sheet in production.
+- **Each video's agents stay in its own folder.** With Claude Code, an agent can read and write only its own project
+  folder, plus read the skills and the brand folder; it cannot list or open other projects. Codex works in the
+  project folder too, but cannot be stopped from reading elsewhere, so use Claude Code for client work. Commands that
+  start Chrome (renders and snapshots) run outside the shell sandbox when typed on their own. To turn the sandbox off
+  (for example if a render tool will not start), set `AGENT_SANDBOX=off`; `AGENT_ALLOW_READ` adds folders the shell
+  may read (separated by `:`).
+
 ## Settings
 
 API keys and a few paths go in `~/.reelmimic/secrets.json`. That file lives outside the repo, so it never gets
