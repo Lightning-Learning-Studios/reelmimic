@@ -1,0 +1,150 @@
+{
+ "from": "live test 1 (script): the planner drew exactly 12 people after the storyboard gate asked for no count",
+ "shots": [
+  {
+   "id": "S5",
+   "start_s": 16.9,
+   "end_s": 26.5,
+   "source_line": "Example Town, example.org",
+   "summary": "A grid of small neutral dots (residents, illustrative, no count shown). A lottery: a handful of dots light up gold in a seeded random order and move into a circle. Label \"Selected by lottery\".",
+   "action": "The teal disc shrinks to a point and leaves a grid of small round-headed resident dots (white at 35%, 18 by 9) on navy. 2.6 s, on \"selected by lottery\": 12 dots light gold (#F2B705) one by one in a seeded random order (seed 7, 150 ms apart). 4.6 s: the gold dots lift out and glide into a ring at centre (900 ms ease-out) while the rest of the grid fades to 15% (residents inside the ring clear out); a gold ring draws around the group. 5.2 s: label \"Selected by lottery\" (Text Sans 600, 34px) under the ring. 7.0 s: a thin bright teal outline of a \"shared challenge\" card appears inside the ring.",
+   "transition_in": "Teal disc shrinks into the centre of the grid.",
+   "transition_out": "Horizontal bright teal bar wipe left to right.",
+   "reads": [
+    "0.0 s: dot grid",
+    "2.6 s: dots light gold, one by one",
+    "4.6 s: gold dots gather into a ring",
+    "5.2 s: Selected by lottery",
+    "7.0 s: challenge card in the ring"
+   ],
+   "text_overlay": [
+    {
+     "text": "Selected by lottery",
+     "at": [
+      5.2,
+      9.6
+     ],
+     "position": "under the ring"
+    },
+    {
+     "text": "Example Town, example.org",
+     "at": [
+      2.5,
+      9.6
+     ],
+     "position": "source line, bottom left above the caption band (y 780)"
+    }
+   ],
+   "notes": "No count shown; the grid and the 12 lit dots are illustrative, not a number on screen."
+  },
+  {
+   "id": "S7",
+   "start_s": 31.1,
+   "end_s": 38.2,
+   "source_line": "Example Org, example.org/about",
+   "summary": "The gold circle of icons in mixed support colours. Two labels build: \"Demographics\" and \"Politics\", each with a matching bar pair (no numbers).",
+   "action": "The ring from S5 returns at left, now as 12 icon discs in mixed support colours (gold, purple, sky, green, teal) with white line people inside, on a gold ring. 2.8 s: label \"Demographics\" with a matching bar pair: a \"Community\" bar and an \"Assembly\" bar of equal length, each split into the same coloured segments, grow from a 3px white baseline (800 ms, 120 ms stagger). 4.6 s: \"Politics\" with its matching pair, same build. No numbers, no axis.",
+   "transition_in": "Teal bar pulls off upward.",
+   "transition_out": "Ring slides off left, the list card rises in its place (continuous, 500 ms).",
+   "reads": [
+    "0.0 s: ring of mixed-colour discs",
+    "2.8 s: Demographics bars",
+    "4.6 s: Politics bars"
+   ],
+   "text_overlay": [
+    {
+     "text": "Demographics",
+     "at": [
+      2.8,
+      7.1
+     ],
+     "position": "right column, row 1"
+    },
+    {
+     "text": "Politics",
+     "at": [
+      4.6,
+      7.1
+     ],
+     "position": "right column, row 2"
+    },
+    {
+     "text": "Community",
+     "at": [
+      2.8,
+      7.1
+     ],
+     "position": "bar label"
+    },
+    {
+     "text": "Assembly",
+     "at": [
+      2.8,
+      7.1
+     ],
+     "position": "bar label"
+    },
+    {
+     "text": "Example Org, example.org/about",
+     "at": [
+      2.5,
+      7.1
+     ],
+     "position": "source line, bottom left above the caption band (y 780)"
+    }
+   ],
+   "notes": "Politics bars use support colours, never the party pair, and show no split; see open question 2."
+  },
+  {
+   "id": "S16",
+   "start_s": 98.9,
+   "end_s": 108.7,
+   "source_line": "Example Town, example.org",
+   "summary": "Hero number \"12\" in gold with its source line directly under it, label \"Community Proposals deliberated\", then a light card \"Recommendations for the future of housing in Riverton\".",
+   "action": "Navy. 0.8 s: \"12\" rises in gold (Display Sans 900, 220px, stat-num) left of centre; its source line \"Example Town, example.org\" fades in directly under it at the same time. 1.4 s: label \"Community Proposals deliberated\" (Text Sans 600, 42px) beside it. 5.0 s: a white light card slides in at right with navy text \"Recommendations for the future of housing in Riverton\" and a small round gold badge on its corner (the example's sticker device, no text in it).",
+   "transition_in": "Teal bar pulls off.",
+   "transition_out": "Vertical bright teal bar wipe.",
+   "reads": [
+    "0.8 s: 12 with source line under it",
+    "1.4 s: Community Proposals deliberated",
+    "5.0 s: recommendations card",
+    "6.0 to 9.8 s: hold"
+   ],
+   "text_overlay": [
+    {
+     "text": "12",
+     "at": [
+      0.8,
+      9.8
+     ],
+     "position": "left, hero number"
+    },
+    {
+     "text": "Community Proposals deliberated",
+     "at": [
+      1.4,
+      9.8
+     ],
+     "position": "beside the number"
+    },
+    {
+     "text": "Recommendations for the future of housing in Riverton",
+     "at": [
+      5.0,
+      9.8
+     ],
+     "position": "light card, right"
+    },
+    {
+     "text": "Example Town, example.org",
+     "at": [
+      0.8,
+      9.8
+     ],
+     "position": "directly under the hero number 12"
+    }
+   ],
+   "notes": "\"12\" is the script's \"a dozen\" (E16: \"deliberated a dozen Community Proposals\"). No count-up, so no other number ever shows."
+  }
+ ]
+}

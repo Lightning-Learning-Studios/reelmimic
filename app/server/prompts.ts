@@ -3,7 +3,7 @@
 // Changed by Lightning Learning Studios, 2026-10-07 (explainer-intake): replan takes a "[frames only]" message, and
 // assemble and critique skip compare.py when there is no reference video.
 // Changed by Lightning Learning Studios, 2026-10-07: agents work inside their own project folder, so skill paths are
-// absolute and no prompt points at the repo root or at other projects.
+// absolute and no prompt points at the repo root or at other projects; the brief's on-screen rules are hard (ONSCREEN).
 import { join } from 'node:path';
 import type { Lang } from '../shared/types.ts';
 import type { BaseVars, Prompts } from './types.ts';
@@ -35,6 +35,13 @@ const SPEED = `效率規則（不能省略任何檢查，只是不浪費時間�
   可續跑的引擎（例如 render.mjs --frames）就重複執行同一個指令或用 --range 分段，直到影格數到齊，再 encode；
   絕不可以留著背景渲染就結束回合，必須寫的輸出檔（例如 out/video.mp4）在回合結束前一定要已經存在。
 - 先把要看的時間點想好再一次截，不要一張一張截；改完一批問題再一次重截驗證。`;
+
+// Lightning: the brief's hard on-screen rules (from explainer-intake) must survive planning, style frames and every replan.
+const ONSCREEN = `On-screen rules: if brief.md has a section "## On-screen rules", every line in it is a hard rule. Copy each rule into
+every shot it names as shots[].rules (the rule line as a string, for example "R1 no-count: dots, people"), and write that
+shot's summary, action, reads and text_overlay so the rule holds: never draw or write a "never" thing, no digit in on-screen
+text under no-numerals, no stated number (not even "about 18") of a no-count thing, exactly n of an "exactly" thing. A rule
+wins over the reference video and your own layout ideas. If one cannot hold, ask in open_questions; never drop or soften it.`;
 
 const LANG_NAME: Record<Lang, string> = { 'zh-TW': '繁體中文', en: 'English', 'zh-CN': '简体中文' };
 
@@ -103,7 +110,8 @@ ${p.brief}
 6. 素材：plan.assets 每一項寫 purpose、kind、query（搜尋關鍵字）與 status：要從外部取得的標 to_fetch、程式畫的標 drawn_in_code、使用者提供的標 user。
    **不要自己下載**：接下來有一個素材 agent 同時去抓。旁白片要先生成旁白草稿、用真實長度排每鏡時間（這一步你自己做）。
 7. 風格定調畫面：這一輪不用做；在 plan.style_frames 先寫好 3–4 個要畫的畫面（路徑 out/check/style_<n>.jpg，對應哪一鏡、要表現什麼），角色與素材好了之後你會接著畫。
-8. open_questions 只放真的需要使用者決定的事（最多 4 個），缺素材的事寫在 required_inputs、不要只寫在問題裡。`,
+8. open_questions 只放真的需要使用者決定的事（最多 4 個），缺素材的事寫在 required_inputs、不要只寫在問題裡。
+${ONSCREEN}`,
 
   // ---------- pre-production helpers that run in parallel after the plan core ----------
   pre_cast: (p) => `${HEADER(p, '角色設計')}
@@ -133,6 +141,7 @@ ${ENGINE(p)}
 2. 看每個角色的 out/check/cast/pre_*.jpg；明顯不符合企劃或拼接感的地方直接改角色檔（角色 agent 沒做的角色，你自己做）。
 3. 照 plan.style_frames 在 build/ 渲染 3–4 張全解析度關鍵畫面到 out/check/style_*.jpg（用真正的角色與素材），和對應參考鏡頭並排看，到水準才交出。
 4. 更新 plan.json（style_frames、assets）與 STORYBOARD.md；鏡頭內容除非必要不要改。
+${ONSCREEN}
 ${EYE}`,
 
   replan: (p) => `${HEADER(p)}
@@ -142,6 +151,7 @@ ${EYE}`,
 ${p.message}
 
 修改 plan.json 與 STORYBOARD.md（version +1，changelog），必要時補抓素材、重畫受影響的定調畫面。不要開始生成。
+${ONSCREEN}
 If the message starts with [frames only]: do not change shots, narration or timing. Only paint the style frames listed in plan.style_frames (out/check/style_<n>.jpg, drawn in code), fetch any to_fetch images, and update style_frames and assets in plan.json.逐條回報怎麼處理；做不到的直說並給替代方案。`,
 
   // ---------- production: setup → cast gate → shot line → assemble ----------

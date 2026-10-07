@@ -1,0 +1,40 @@
+{
+ "from": "live test 2, plan v3 after the person asked again in chat: S5 an uneven cluster of about 60 dots",
+ "shots": [
+  {
+   "id": "S5",
+   "start_s": 16.9,
+   "end_s": 26.5,
+   "summary": "A wide grid of small neutral dots; on \"selected by lottery\" a scatter of dots lights gold in seeded random order and gathers into an uneven, overlapping cluster inside a thin gold ring; label \"Selected by lottery\"",
+   "action": "16.9 s (frame starts covered in bright teal from the wipe, which clears to the right): a wide grid of small slate dots, too many to count at a glance, fades up across the upper two thirds of the frame. 21.3 s: about 60 scattered dots turn gold (#F2B705) one after another, seeded random order (seed fixed in code), about 25ms apart, too many and too fast to count. 21.6 s: label \"Selected by lottery\" (Display Sans 900, 68px, white, on a navy box so it reads over the grid) appears centred under where the ring will form. 23.0 to 24.4 s: the gold dots glide to centre (900ms, ease-out cubic) and settle as one uneven cluster: seeded random positions, sizes 18 to 30px, overlapping, each with a thin navy edge so it still reads as many people, never as a countable row or ring. 23.6 s: a thin gold circle line (radius 200px) fades in around the cluster. The rest of the grid dims to 15%. 24.4 s: source line \"Source: Example Town, example.org\" directly under the label, in the same navy box. Hold. No number anywhere.",
+   "transition_in": "Teal wipe clears off right",
+   "transition_out": "Cross-fade 400ms; the gold ring returns in S7",
+   "reads": [
+    "16.9 to 17.4 s: dot grid",
+    "21.3 to 23.3 s: gold dots light",
+    "21.6 s: Selected by lottery",
+    "23.0 to 24.4 s: gold dots gather into an overlapping cluster inside the gold ring",
+    "24.4 to 26.5 s: hold"
+   ],
+   "text_overlay": [
+    {
+     "text": "Selected by lottery",
+     "at": [
+      21.6,
+      26.5
+     ],
+     "position": "centred under the ring"
+    }
+   ],
+   "source_line": {
+    "text": "Source: Example Town, example.org",
+    "at": [
+     24.4,
+     26.5
+    ],
+    "position": "directly under the label \"Selected by lottery\", in the same navy box"
+   },
+   "notes": "Dots are residents, illustrative: no count or number shown, seeded random order so every render matches. v3 (the reviewer): the selected group is an uneven overlapping cluster inside the ring, not an evenly spaced ring of dots people could count; the source line sits directly under the label."
+  }
+ ]
+}

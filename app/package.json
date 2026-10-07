@@ -1,5 +1,6 @@
 {
   "name": "reelmimic",
+  "//": "Changed by Lightning Learning Studios, 2026-10-07: npm test also runs the explainer-intake script tests.",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +10,7 @@
     "start": "npm run build && node server/index.ts",
     "typecheck": "tsc -p tsconfig.json && tsc -p web/tsconfig.json",
     "lint": "eslint .",
-    "test": "node --test --experimental-test-module-mocks \"server/**/*.test.ts\"",
+    "test": "node --test --experimental-test-module-mocks \"server/**/*.test.ts\" \"../.claude/skills/explainer-intake/scripts/*.test.mjs\"",
     "check": "npm run typecheck && npm run lint && npm test",
     "doctor": "node scripts/doctor.mjs",
     "setup": "npm install && node scripts/doctor.mjs"

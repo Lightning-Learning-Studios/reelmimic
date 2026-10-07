@@ -1,0 +1,117 @@
+{
+ "from": "live test 3 (concept): kept every gate change (two pins, a dozen in words)",
+ "shots": [
+  {
+   "id": "S5",
+   "start_s": 18.3,
+   "end_s": 27.9,
+   "source_line": "Source: Example Town, example.org",
+   "summary": "A big grid of icon discs on navy (a town). A lottery drum turns; scattered discs light bright teal and drift toward the centre. Words: representative, selected by lottery, a shared challenge.",
+   "action": "The teal circle wipe shrinks away to reveal a dense grid of small round-headed icon discs in muted support colours at 50% (too many to count at a glance, edge to edge, right two thirds). 0.4 s a lottery drum pictogram in a house teal disc (upper left) turns two slow revolutions (ease-in-out, 2.4 s). 1.6 s \"representative\" (h2) lands left. 3.2 to 4.6 s discs scattered across the whole grid light bright teal in a seeded random order (no number shown, never a neat group). 4.4 s \"selected by lottery\" lands. 5.4 to 6.6 s the lit discs drift toward the centre into a loose, overlapping cluster while the rest dim to 25%. 6.6 s \"a shared challenge\" lands and a small white challenge card (blank lines, no text) settles in the cluster. Source line at 2.0 s.",
+   "transition_in": "Teal circle wipe from S4 shrinks into the grid centre.",
+   "transition_out": "Continuous: the lit cluster flows into the bar strip (S6).",
+   "reads": [
+    "0.0 to 0.4 s: wipe clears, town grid",
+    "0.4 to 2.8 s: drum turns",
+    "1.6 s: representative",
+    "3.2 to 4.6 s: scattered discs light",
+    "4.4 s: selected by lottery",
+    "5.4 to 6.6 s: lit discs gather loosely",
+    "6.6 s: a shared challenge",
+    "7.6 to 9.6 s: hold"
+   ],
+   "text_overlay": [
+    {
+     "text": "representative",
+     "at": [
+      1.6,
+      9.6
+     ],
+     "position": "left column, line 1"
+    },
+    {
+     "text": "selected by lottery",
+     "at": [
+      4.4,
+      9.6
+     ],
+     "position": "left column, line 2"
+    },
+    {
+     "text": "a shared challenge",
+     "at": [
+      6.6,
+      9.6
+     ],
+     "position": "left column, line 3"
+    }
+   ],
+   "notes": "Storyboard: no countable group. Lit discs stay scattered, then overlap in the cluster so no count reads."
+  },
+  {
+   "id": "S15",
+   "start_s": 83.1,
+   "end_s": 86.6,
+   "source_line": "Source: Example Org, example.org/about",
+   "summary": "Colour wipe to navy. A plain US outline map in house teal, states not labelled. \"Already happening\". Exactly two pins: Hillview and Riverton.",
+   "action": "0.0 to 0.45 s bright teal bar wipe clears to navy. 0.4 s the contiguous US map (house teal land, navy state borders, no labels, Alaska and Hawaii hidden) fades up, right of centre at 0.84 scale. 0.8 s \"Already happening\" (h2, two lines) lands in the left column, clear of the map; 1.1 s source line bottom left. 1.5 s a white pin with a gold tip drops on Hillview, State A; 1.9 s a second on Riverton, State B (500 ms ease-out, no bounce). Exactly two pins, no other cities. 2.4 to 3.5 s hold.",
+   "transition_in": "Bright teal bar wipe clears to navy.",
+   "transition_out": "Continuous: camera pushes into State A (S16).",
+   "reads": [
+    "0.0 to 0.45 s: wipe",
+    "0.5 s: US map",
+    "0.8 s: Already happening",
+    "1.5 s: Hillview pin",
+    "1.9 s: Riverton pin",
+    "2.4 to 3.5 s: hold"
+   ],
+   "text_overlay": [
+    {
+     "text": "Already happening",
+     "at": [
+      0.8,
+      3.5
+     ],
+     "position": "left column, two lines"
+    }
+   ],
+   "notes": "Pins placed from coordinates: Hillview 38.48 N, 107.88 W; Riverton 41.08 N, 81.52 W (north-east State B). Style frame pass: the title moved off the map into the left column, and the source line was added."
+  },
+  {
+   "id": "S18",
+   "start_s": 100.6,
+   "end_s": 109.9,
+   "source_line": "Source: Example Town, example.org",
+   "summary": "\"a dozen Community Proposals\" in Display Sans with \"a dozen\" in gold and the source line under it. Then a check mark card: \"Clear recommendations for housing\".",
+   "action": "0.0 to 0.45 s teal bar wipe clears to navy. 0.5 s \"a dozen Community Proposals\" (Display Sans 900, 96px, white, two lines, \"a dozen\" gold) rises in, centre left; 0.9 s source line directly under it. 1.0 to 4.4 s hold. 4.6 s the words slide up 120px and dim to 60%; 4.8 s a white card rises with a gold check disc at its left: \"Clear recommendations for housing\" (navy Display Sans 900, 56px), source line under the card. 5.6 to 9.3 s hold. Never the numeral 12, never a countable row of cards.",
+   "transition_in": "Bright teal bar wipe clears.",
+   "transition_out": "Continuous: the card leaves upward and the strips stack in (S19).",
+   "reads": [
+    "0.5 s: a dozen Community Proposals",
+    "0.9 s: source line",
+    "1.0 to 4.4 s: hold",
+    "4.8 s: check card",
+    "5.6 to 9.3 s: hold"
+   ],
+   "text_overlay": [
+    {
+     "text": "a dozen Community Proposals",
+     "at": [
+      0.5,
+      9.3
+     ],
+     "position": "centre left"
+    },
+    {
+     "text": "Clear recommendations for housing",
+     "at": [
+      4.8,
+      9.3
+     ],
+     "position": "check card"
+    }
+   ],
+   "notes": "\"a dozen\" in words only; no 12."
+  }
+ ]
+}

@@ -15,6 +15,7 @@ const { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } = fs;
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { checkRules, copiedRules, parseRules } from './onscreen.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const args = process.argv.slice(2), cmd = args[0], out = args[1] && !args[1].startsWith('--') ? resolve(args[1]) : null;
@@ -149,6 +150,13 @@ check(onDisk.length >= 3, `style frames painted: ${onDisk.length} of ${frames.le
 const scriptRows = existsSync(join(out, 'intake', 'script.md')) ? read(join(out, 'intake', 'script.md')).split('\n').filter((l) => /^\|\s*\d+\s*\|/.test(l)).map((l) => l.split('|').map((c) => c.trim())) : [];
 const lost = scriptRows.filter((r) => !planText.includes(norm(r[2])));
 check(scriptRows.length && !lost.length, `approved script kept word for word: ${scriptRows.length - lost.length} of ${scriptRows.length} lines${lost.length ? ' (changed or missing: ' + lost.map((r) => 'line ' + r[1]).join(', ') + ')' : ''}`);
+
+// 2b. the on-screen rules from the storyboard gate, shot by shot
+const rules = parseRules(existsSync(join(out, 'handoff', 'brief.md')) ? read(join(out, 'handoff', 'brief.md')) : '');
+check(rules.length > 0, `the brief has on-screen rules (${rules.length})`, true);
+for (const r of checkRules(rules, plan)) check(r.ok, `on-screen ${r.rule.id} (${r.shot}): ${r.rule.words || r.rule.spec}${r.ok ? '' : ' -- ' + r.why}`);
+const uncopied = rules.flatMap((r) => (r.shots === 'all' ? shots : shots.filter((x) => r.shots.includes(x.id))).filter((x) => !copiedRules(x).includes(r.id)).map((x) => `${r.id} in ${x.id}`));
+if (rules.length) check(!uncopied.length, `every rule is copied into its shots${uncopied.length ? ' (missing: ' + uncopied.join(', ') + ')' : ''}`, true);
 
 // 3. claims and sources
 const evIds = new Set([...(plan.evidence || []).map((e) => e.id), ...(existsSync(join(out, 'intake', 'evidence.md')) ? [...read(join(out, 'intake', 'evidence.md')).matchAll(/^\|\s*([A-Z]\d+\w*)\s*\|/gm)].map((m) => m[1]) : [])]);

@@ -99,9 +99,23 @@ Write `intake/script.md`: one narration line per row with its claim ids, at abou
 
 Write `intake/storyboard.md`: one row per shot with id, start and end seconds, what is on screen, the narration line, the claim ids, and the source line shown under any number. Use the brand file's own colour and type names. With no characters, say what stands in for people (icons, silhouettes, maps). Timing comes from word counts: say so. Ask: **Approved** or **Changes needed**.
 
+When it is approved, write the on-screen rules into `intake/storyboard.md` under `## On-screen rules`, one per line: every on-screen "must" and "must not" in the approved storyboard, and every change the person asked for at this gate (each "Changes needed" item about what is on screen becomes at least one rule; check `GATES.md` history so none is missed). Each rule names its shots (or `all`), one check, and the person's own words:
+
+`- R1 [S5] no-count: dots, discs, people | a handful of dots, no count shown`
+
+| Check | Use it for | Fails when |
+|---|---|---|
+| `never: <things>` | "no balance scale", "no party colours" | a shot draws or writes one of them (a mention after "no" or "never" is fine) |
+| `no-numerals` | "a dozen in words, never 12" | the shot's on-screen text has a digit |
+| `no-count: <things>` | "no count shown", "never a countable group" | the shot states a number from 2 to 30 of them ("12 dots", "about 18 dots") |
+| `exactly <n>: <thing>` | "exactly two map pins" | the thing is missing, or another number of it is stated |
+| `show: <words>` | "the source line under the number" | the words are not in what the shot shows |
+
+Name things the way a plan would draw them (`bar chart`, not `bar`, which also matches a "bar wipe"). A soft wish ("a handful", "too many to count") is still a rule: write it as `no-count`. Show the rules with the storyboard at its gate.
+
 ## Step 7. Hand off to reelmimic
 
-1. Write `handoff/brief.md` from `brief.template.md` here. It carries the approved script word for word, the approved storyboard, the brand-wins rule, the claims rule, the client's terms, and the planning limits (no voice, music or image generation before approval).
+1. Write `handoff/brief.md` from `brief.template.md` here. It carries the approved script word for word, the approved storyboard, the on-screen rules word for word, the brand-wins rule, the claims rule, the client's terms, and the planning limits (no voice, music or image generation before approval).
 2. Write `handoff/handoff.json`:
    `{ "title": "...", "lang": "en", "agent": "claude", "reference": "<example video path or null>", "inputs": ["<brand DESIGN.md>", "<logo>", "<fonts>", "intake/script.md", "intake/storyboard.md", "intake/evidence.md"] }`
 3. With no example video, also write `handoff/plan.json` and `handoff/STORYBOARD.md` in reelmimic's format (`.claude/skills/video-clone/CONTRACT.md`), with `ref_shot: null`, `claims` on every shot and a top-level `evidence` list.
@@ -109,7 +123,7 @@ Write `intake/storyboard.md`: one row per shot with id, start and end seconds, w
    `node .claude/skills/explainer-intake/scripts/register.mjs start <out>`.
    With an example video it creates the project through reelmimic's own front door, so reelmimic analyses the example, writes its plan from the brief and paints the style frames. Without one it registers the project at plan review and asks reelmimic to paint style frames only.
 5. Wait for plan review: `register.mjs watch <out>` prints each stage and the link to open.
-6. Run `register.mjs check <out>`: it checks that the plan keeps the approved narration, the claims, the brand colours and fonts, and the banned words. Show the person what failed.
+6. Run `register.mjs check <out>`: it checks that the plan keeps the approved narration, every on-screen rule (shot by shot), the claims, the brand colours and fonts, and the banned words. Show the person what failed. A failed on-screen rule goes back to reelmimic as a chat message naming the rule and the shot, before the person approves.
 
 ## Step 8. Plan review
 

@@ -1,0 +1,134 @@
+{
+ "from": "live test 2 (storyboard), plan v1: \"no count shown\" became a ring of 18 dots",
+ "shots": [
+  {
+   "id": "S5",
+   "start_s": 16.9,
+   "end_s": 26.5,
+   "summary": "A wide grid of small neutral dots; on \"selected by lottery\" a handful light gold in seeded random order and move into a circle; label \"Selected by lottery\"",
+   "action": "16.9 s (frame starts covered in bright teal from the wipe, which clears to the right): a wide grid of small slate dots, too many to count at a glance, fades up across the upper two thirds of the frame. 21.3 s: about 18 dots turn gold (#F2B705) one after another, seeded random order (seed fixed in code), 110ms apart. 21.6 s: label \"Selected by lottery\" (Display Sans 900, 68px, white, on a navy box so it reads over the grid) appears centred under where the ring will form. 23.0 to 24.4 s: the gold dots glide into a ring at centre (radius 200px, 900ms, ease-out cubic), grow to 25px and a thin gold circle line fades in at 24.0 s, while the rest of the grid dims to 15%. 24.4 s: source line. Hold. No number anywhere.",
+   "transition_in": "Teal wipe clears off right",
+   "transition_out": "Cross-fade 400ms; the gold ring returns in S7",
+   "reads": [
+    "16.9 to 17.4 s: dot grid",
+    "21.3 to 23.3 s: gold dots light",
+    "21.6 s: Selected by lottery",
+    "23.0 to 24.4 s: gold dots form the ring",
+    "24.4 to 26.5 s: hold"
+   ],
+   "text_overlay": [
+    {
+     "text": "Selected by lottery",
+     "at": [
+      21.6,
+      26.5
+     ],
+     "position": "centred under the ring"
+    }
+   ],
+   "source_line": {
+    "text": "Source: Example Town, example.org",
+    "at": [
+     24.4,
+     26.5
+    ],
+    "position": "under the fact, above the caption band"
+   },
+   "notes": "Dots are residents, illustrative: no count or number shown, seeded random order so every render matches."
+  },
+  {
+   "id": "S7",
+   "start_s": 31.1,
+   "end_s": 38.2,
+   "summary": "The gold ring returns as icon people discs in mixed support colours; \"Demographics\" then \"Politics\" build one per phrase",
+   "action": "31.2 s: a thin gold ring at centre with icon-person discs set closely around it (gold, purple, sky, green, teal; white round-headed silhouettes inside) fades up; they overlap so it reads as a group, not a count. 34.4 s: \"Demographics\" (Display Sans 900, 68px, white) lands left of the ring. 35.4 s: \"Politics\" lands right of it. No party colours, no bars, no numbers. 35.9 s: source line. Hold.",
+   "transition_in": "Cross-fade 400ms",
+   "transition_out": "Bright teal vertical bar wipe (section break)",
+   "reads": [
+    "31.2 s: ring of icon people",
+    "34.4 s: Demographics",
+    "35.4 s: Politics",
+    "35.9 to 38.2 s: hold"
+   ],
+   "text_overlay": [
+    {
+     "text": "Demographics",
+     "at": [
+      34.4,
+      38.2
+     ],
+     "position": "left of ring"
+    },
+    {
+     "text": "Politics",
+     "at": [
+      35.4,
+      38.2
+     ],
+     "position": "right of ring"
+    }
+   ],
+   "source_line": {
+    "text": "Source: Example Org, example.org/about",
+    "at": [
+     35.9,
+     38.2
+    ],
+    "position": "under the fact, above the caption band"
+   },
+   "notes": "Gate change kept: no bars, no numbers, no count of people. Support colours only, no party colours."
+  },
+  {
+   "id": "S10",
+   "start_s": 51.5,
+   "end_s": 60.2,
+   "summary": "Step 2 \"Deliberate\": small table groups of icons with a facilitator disc; speech bubbles drift to the middle and join into one gold check, \"Broad consensus\"",
+   "action": "51.6 s: \"STEP 2\" and \"Deliberate\" replace the step label. 51.8 s: three small round tables (house teal) spread across the frame, each with a few icon-person discs around it in support colours. 52.6 s, on \"trained facilitators\": a bright teal ring and a small facilitator pictogram mark one disc at each table. 54.4 to 57.4 s, on \"listen, deliberate and weigh tradeoffs\": white speech bubbles (no text) rise from the tables and drift to the centre, staggered. 58.3 s, on \"broad consensus\": the bubbles merge into one gold disc with a navy check (600ms, ease-out); label \"Broad consensus\" (Text Sans 600, 34px, white) under it. 58.6 s: source line. Hold.",
+   "transition_in": "Cross-fade 400ms",
+   "transition_out": "Cross-fade 400ms; step label to \"Step 3\"",
+   "reads": [
+    "51.6 s: Step 2, Deliberate",
+    "51.8 s: three tables",
+    "52.6 s: facilitators marked",
+    "54.4 to 57.4 s: bubbles drift in",
+    "58.3 s: gold check, Broad consensus",
+    "58.6 to 60.2 s: hold"
+   ],
+   "text_overlay": [
+    {
+     "text": "STEP 2",
+     "at": [
+      51.6,
+      60.2
+     ],
+     "position": "top left eyebrow"
+    },
+    {
+     "text": "Deliberate",
+     "at": [
+      51.6,
+      60.2
+     ],
+     "position": "top left"
+    },
+    {
+     "text": "Broad consensus",
+     "at": [
+      58.3,
+      60.2
+     ],
+     "position": "under the check"
+    }
+   ],
+   "source_line": {
+    "text": "Source: Example Org, example.org/about",
+    "at": [
+     58.6,
+     60.2
+    ],
+    "position": "under the fact, above the caption band"
+   },
+   "notes": "Gate change kept: no balance scale."
+  }
+ ]
+}

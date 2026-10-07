@@ -18,6 +18,18 @@ Made with explainer-intake. The script and the storyboard below were approved by
 
 <the storyboard table>
 
+## On-screen rules (hard: every rule must hold in plan.json)
+
+Each line is a rule from the approved storyboard or from a change the person asked for at the storyboard gate. Copy every rule into each shot it names as `"rules": ["R1 no-count: dots, people"]`, and write that shot's summary, action, reads and text_overlay so the rule holds. A rule wins over the example video and over your own layout ideas. If one cannot hold, ask in open_questions; never drop it.
+
+<one rule per line: - R<n> [<shot ids, or all>] <check> | <the rule in the person's words>
+ checks: never: <things> · no-numerals · no-count: <things> · exactly <n>: <thing> · show: <words>
+ for example:
+- R1 [S5] no-count: dots, discs, people | a handful of dots, no count shown
+- R2 [S16] no-numerals | the count of proposals in words, never a numeral
+- R3 [S15] exactly 2: pins | exactly two map pins
+- R4 [S10] never: balance scale | no balance scale in S10>
+
 You may sharpen camera moves, transitions and layout to follow the example video's technique, and adjust shot lengths by up to 20 percent. Anything bigger goes in open_questions.
 
 ## Brand (wins over the example video)
