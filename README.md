@@ -118,6 +118,24 @@ Codex reads `AGENTS.md`, so there's nothing else to set up.
 4. The **Production line** tab shows where each character and each part of the video is, with the review screenshots.
 5. When it's done, leave a note at whatever second looks off.
 
+## Explainer intake (Lightning fork)
+
+<!-- Changed by Lightning Learning Studios, 2026-10-07: this section was added for the explainer-intake skill. -->
+
+For explainers that start from a concept, a script or a storyboard instead of a reference video. Open Claude Code in
+this folder and type:
+
+```
+/explainer-intake --script my-script.md --example example.mp4 --brand my-brand/ --out projects/intake-my-video
+```
+
+Any mix of `--concept`, `--script`, `--storyboard`, `--doc`, `--linear` (a pasted card in a text file), `--evidence`
+and `--example` works; the skill asks only for what is missing. The brand folder holds a `DESIGN.md` (design.md format)
+and a logo. You approve the evidence, the script and the storyboard in the chat, then the skill hands the job to the
+web app (start it first with `./start.sh`), which analyses the example, writes the plan, paints style frames and waits
+for you at plan review. Add `--stop-before-production` to stop the job the moment production starts. Details:
+[`.claude/skills/explainer-intake/SKILL.md`](.claude/skills/explainer-intake/SKILL.md).
+
 ## Settings
 
 API keys and a few paths go in `~/.reelmimic/secrets.json`. That file lives outside the repo, so it never gets
