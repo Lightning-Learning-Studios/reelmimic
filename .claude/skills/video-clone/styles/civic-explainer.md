@@ -11,7 +11,7 @@ Added by Lightning Learning Studios with the explainer-intake skill. Projects th
 ## Recognition traits
 - Picture: flat 2D infographics, maps, charts, simple icon people, big plain headlines, one idea per scene
 - Cutting: follows the narration at a medium pace; holds of at least 2.5 s after a statement lands
-- Sound: one narrator plus a quiet music bed
+- Sound: one narrator; a quiet music bed only when the brief allows music
 - Text: captions always on; a short source line under every number
 
 ## Production defaults
@@ -22,6 +22,7 @@ Added by Lightning Learning Studios with the explainer-intake skill. Projects th
 - People are drawn the way the brief and the brand file say. When the brief says no characters, use icons, silhouettes, maps and charts, and skip `vector_rig`.
 - If `inputs/NO_REFERENCE.md` exists there is no example video: skip compare.py and judge against `STORYBOARD.md` and the brand file.
 - Calm motion: ease-out entrances, no bounce, shake, whip pans or flashes.
+- Music and sound effects only when the brief allows them. When it says none, or says nothing, the soundtrack is the narration alone: set `plan.music.source` to `none` and add no sfx.
 
 ## Known pitfalls
 - A wipe in the ground colour over the same ground is invisible; seams use an accent colour.

@@ -6,6 +6,7 @@
 // absolute and no prompt points at the repo root or at other projects; the brief's on-screen rules are hard (ONSCREEN);
 // answered open questions are recorded with their answer (ANSWERS); setup skips the rig and cast sheet with no characters
 // to rig (NO_CAST), and icons are characters of kind "icon".
+// Changed by Lightning Learning Studios, 2026-10-08: setup mixes music only when the plan has music.
 import { join } from 'node:path';
 import type { Lang } from '../shared/types.ts';
 import type { BaseVars, Prompts } from './types.ts';
@@ -181,7 +182,7 @@ ${ENGINE(p)}
    全片規格一開始就定好、寫進共用檔（最後評審最常退回的就是這些）：
    - 字幕層：字高 ≥ 畫面高度 5%、粗描邊（1080p 下 ≥ 8 px）加下陰影或半透明底條，壓在白色/淺色物件上也讀得出來；縮到 390 px 寬要能一眼讀出。
    - 片尾：不要在最後幾格硬切全黑；要黑就用 ≥ 0.4 秒淡出，字幕跟著淡出。
-   - 混音：旁白約 -16 LUFS；配樂在旁白下約低 10–14 dB，但在沒有旁白的空檔（字卡、停頓笑點）要聽得到（約 -24 ～ -28 dBFS RMS），不要用過強的 sidechain 把音樂壓到消失；做完量一次空檔的音量。
+   - 混音：旁白約 -16 LUFS；brief 不允許配樂或音效時（plan.music.source 是 none）就只有旁白，不加配樂與音效。有配樂時：配樂在旁白下約低 10–14 dB，但在沒有旁白的空檔（字卡、停頓笑點）要聽得到（約 -24 ～ -28 dBFS RMS），不要用過強的 sidechain 把音樂壓到消失；做完量一次空檔的音量。
    每個鏡頭各自一個檔案（painted-animation：src/scenes/<shot>.js；hyperframes：compositions/<shot>.html），總檔先把全部鏡頭的引用都掛好，
    讓製作 agent 只需要改自己的鏡頭檔，不會互相衝突。
 ${p.cast ? `2. **角色**：用 engine 的角色系統做出每個角色（2D 向量風格一律用 ${SKILL}/assets/vector_rig/ 的骨架＋一體輪廓角色，不准用分開的形狀拼角色；
