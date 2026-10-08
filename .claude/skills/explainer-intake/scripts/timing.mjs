@@ -14,19 +14,18 @@
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const W = 480, H = 270;   // the picture is compared at this size: a moving hand or a new label still changes pixels
-export const STILL = 8;   // a pixel that changes by more than this (of 255) is motion; H.264 noise on a still frame stays below it
+const W = 240, H = 135;   // the picture is compared at this size: a moving hand or a new label still changes pixels
+export const STILL = 12;  // a pixel more than this (of 255) away from the scene's last frame is not settled yet
 
-// How each frame differs from the one before it, on a W x H grey picture: the mean change (finds cuts) and the largest
-// change of any pixel (finds any motion). Frame 0 has { mean: 0, max: 0 }.
+// Mean absolute difference between each frame and the one before it (diffs[0] = 0): a cut is a sharp peak.
 export function frameDiffs(frames) {
-  const mean = [0], max = [0];
+  const d = [0];
   for (let i = 1; i < frames.length; i++) {
-    let s = 0, m = 0; const a = frames[i - 1], b = frames[i];
-    for (let k = 0; k < a.length; k++) { const v = Math.abs(a[k] - b[k]); s += v; if (v > m) m = v; }
-    mean.push(s / a.length); max.push(m);
+    let s = 0; const a = frames[i - 1], b = frames[i];
+    for (let k = 0; k < a.length; k++) s += Math.abs(a[k] - b[k]);
+    d.push(s / a.length);
   }
-  return { mean, max };
+  return d;
 }
 
 // The cut nearest to `at`: the frame within +-window whose difference is largest and clearly above the still level.
@@ -38,11 +37,20 @@ export function findCut(diffs, at, window = 15, minJump = 4) {
   return bestV >= minJump ? best : null;
 }
 
-// Frames at the end of [start, end) that stay still: count back from end - 1 while no pixel changes by more than `still`.
-export function stillTail(diffs, start, end, still = STILL) {
+// Frames at the end of [start, end) that already look like the scene's last frame: count back from end - 1 while no
+// pixel is more than `still` away from it. Comparing with the last frame (not the previous one) catches slow fades and
+// ignores one-frame encoder noise.
+export function stillTail(frames, start, end, still = STILL) {
+  const ref = frames[end - 1];
   let n = 0;
-  for (let f = end - 1; f > start; f--) { if (diffs[f] > still) break; n++; }
-  return n + 1;   // the first frame of the still run counts too
+  for (let f = end - 1; f >= start; f--) {
+    const a = frames[f];
+    let moved = false;
+    for (let k = 0; k < a.length; k++) if (Math.abs(a[k] - ref[k]) > still) { moved = true; break; }
+    if (moved) break;
+    n++;
+  }
+  return n;
 }
 
 // Lag (in envelope steps) that best lines up envelope b with envelope a, searched over +-maxLag.
@@ -56,8 +64,8 @@ export function bestLag(a, b, maxLag) {
   return best;
 }
 
-export function review(manifest, diffs, { tolerance = 1, frames = diffs.mean.length } = {}) {
-  const segs = manifest.segments, rows = [], cuts = diffs.mean;
+export function review(manifest, pictures, { tolerance = 1 } = {}) {
+  const segs = manifest.segments, rows = [], cuts = frameDiffs(pictures), frames = pictures.length;
   let fails = 0;
   const lenOk = Math.abs(frames - manifest.total_frames) <= tolerance;
   if (!lenOk) fails++;
@@ -72,7 +80,7 @@ export function review(manifest, diffs, { tolerance = 1, frames = diffs.mean.len
     const hold = s.hold_frames ?? (s.end_frame - s.speech_end_frame);
     // the measured scene ends at the next measured cut (or the film's end), so a late cut does not hide a short hold
     const next = segs[i + 1] ? (findCut(cuts, segs[i + 1].start_frame) ?? segs[i + 1].start_frame) : frames;
-    row.holdWanted = hold; row.holdMeasured = stillTail(diffs.max, s.start_frame, Math.min(next, frames));
+    row.holdWanted = hold; row.holdMeasured = stillTail(pictures, s.start_frame, Math.min(next, frames));
     row.holdOk = row.holdMeasured >= hold - tolerance;
     if (!row.holdOk) fails++;
     rows.push(row);
@@ -120,7 +128,7 @@ async function main() {
   const manifest = JSON.parse(readFileSync(manifestFile, 'utf8')), fps = manifest.fps || 30;
   const tolerance = +(opt('--tolerance') ?? 1);
   const frames = await readFrames(video);
-  const r = review(manifest, frameDiffs(frames), { tolerance, frames: frames.length });
+  const r = review(manifest, frames, { tolerance });
   if (opt('--audio')) {
     const rate = 100, [a, b] = await Promise.all([envelope(opt('--audio'), rate), envelope(video, rate)]);
     const lagFrames = (bestLag(a, b, rate) / rate) * fps;
