@@ -136,6 +136,12 @@ Then read the plan's open questions (`register.mjs watch` prints them at plan re
 
 With `--stop-before-production`, run `register.mjs watch <out> --stop-at-production` before the person approves. The moment production starts it stops the job with reelmimic's own Cancel, so nothing is rendered.
 
+## Step 9. Timing review after the render
+
+When the narration was measured into a timing manifest (frames per scene and hold), check the rendered film against it:
+`node .claude/skills/explainer-intake/scripts/timing.mjs <clean video.mp4> <manifest.json> --audio <narration master.wav>`.
+It finds each scene's cut, counts the still frames at the end of each scene, and lines the soundtrack up with the master. Anything off by more than one frame fails: fix the composition's timing and render again.
+
 ## Rules
 
 - Every number on screen or in narration traces to an evidence row.
