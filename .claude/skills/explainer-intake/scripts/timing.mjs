@@ -14,17 +14,19 @@
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const W = 160, H = 90;   // the picture is compared at this size: enough to see a cut or a moving label, cheap to read
+const W = 480, H = 270;   // the picture is compared at this size: a moving hand or a new label still changes pixels
+export const STILL = 8;   // a pixel that changes by more than this (of 255) is motion; H.264 noise on a still frame stays below it
 
-// Mean absolute difference between each frame and the one before it (diffs[0] = 0), on a W x H grey picture.
+// How each frame differs from the one before it, on a W x H grey picture: the mean change (finds cuts) and the largest
+// change of any pixel (finds any motion). Frame 0 has { mean: 0, max: 0 }.
 export function frameDiffs(frames) {
-  const d = [0];
+  const mean = [0], max = [0];
   for (let i = 1; i < frames.length; i++) {
-    let s = 0; const a = frames[i - 1], b = frames[i];
-    for (let k = 0; k < a.length; k++) s += Math.abs(a[k] - b[k]);
-    d.push(s / a.length);
+    let s = 0, m = 0; const a = frames[i - 1], b = frames[i];
+    for (let k = 0; k < a.length; k++) { const v = Math.abs(a[k] - b[k]); s += v; if (v > m) m = v; }
+    mean.push(s / a.length); max.push(m);
   }
-  return d;
+  return { mean, max };
 }
 
 // The cut nearest to `at`: the frame within +-window whose difference is largest and clearly above the still level.
@@ -36,8 +38,8 @@ export function findCut(diffs, at, window = 15, minJump = 4) {
   return bestV >= minJump ? best : null;
 }
 
-// Frames at the end of [start, end) that stay still: count back from end - 1 while the picture does not change.
-export function stillTail(diffs, start, end, still = 0.5) {
+// Frames at the end of [start, end) that stay still: count back from end - 1 while no pixel changes by more than `still`.
+export function stillTail(diffs, start, end, still = STILL) {
   let n = 0;
   for (let f = end - 1; f > start; f--) { if (diffs[f] > still) break; n++; }
   return n + 1;   // the first frame of the still run counts too
@@ -54,23 +56,23 @@ export function bestLag(a, b, maxLag) {
   return best;
 }
 
-export function review(manifest, diffs, { tolerance = 1, frames = diffs.length } = {}) {
-  const segs = manifest.segments, rows = [];
+export function review(manifest, diffs, { tolerance = 1, frames = diffs.mean.length } = {}) {
+  const segs = manifest.segments, rows = [], cuts = diffs.mean;
   let fails = 0;
   const lenOk = Math.abs(frames - manifest.total_frames) <= tolerance;
   if (!lenOk) fails++;
   segs.forEach((s, i) => {
     const row = { scene: i + 1, start: s.start_frame, end: s.end_frame };
     if (i > 0) {
-      const cut = findCut(diffs, s.start_frame);
+      const cut = findCut(cuts, s.start_frame);
       row.cut = cut; row.cutOffset = cut == null ? null : cut - s.start_frame;
       row.cutOk = cut != null && Math.abs(row.cutOffset) <= tolerance;
       if (!row.cutOk) fails++;
     }
     const hold = s.hold_frames ?? (s.end_frame - s.speech_end_frame);
     // the measured scene ends at the next measured cut (or the film's end), so a late cut does not hide a short hold
-    const next = segs[i + 1] ? (findCut(diffs, segs[i + 1].start_frame) ?? segs[i + 1].start_frame) : frames;
-    row.holdWanted = hold; row.holdMeasured = stillTail(diffs, s.start_frame, Math.min(next, frames));
+    const next = segs[i + 1] ? (findCut(cuts, segs[i + 1].start_frame) ?? segs[i + 1].start_frame) : frames;
+    row.holdWanted = hold; row.holdMeasured = stillTail(diffs.max, s.start_frame, Math.min(next, frames));
     row.holdOk = row.holdMeasured >= hold - tolerance;
     if (!row.holdOk) fails++;
     rows.push(row);

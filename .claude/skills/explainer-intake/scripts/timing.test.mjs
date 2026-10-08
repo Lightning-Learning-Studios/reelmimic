@@ -47,6 +47,6 @@ test('a hold longer than the still tail fails', async () => {
 test('the helpers', () => {
   assert.equal(findCut([0, 0, 0, 9, 0, 0], 2), 3);
   assert.equal(findCut([0, 0, 1, 0], 2), null);
-  assert.equal(stillTail([0, 5, 5, 0, 0, 0], 0, 6), 4);   // frames 2 to 5 are the same picture
+  assert.equal(stillTail([0, 50, 50, 3, 0, 0], 0, 6), 4);   // frames 2 to 5 are the same picture (3 is encoder noise)
   assert.equal(bestLag([0, 1, 0, 0, 0], [0, 0, 0, 1, 0], 3), 2);
 });
