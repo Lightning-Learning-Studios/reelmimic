@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { bestLag, findCut, readFrames, review, stillTail } from './timing.mjs';
+import { bestLag, findBoundary, readFrames, review, stillTail } from './timing.mjs';
 
 const manifest = (shift = 0) => ({ fps: 30, total_frames: 180, segments: [0, 1, 2].map((i) => ({
   start_frame: i * 60 + (i ? shift : 0), speech_end_frame: i * 60 + 30, end_frame: (i + 1) * 60 + (i < 2 ? shift : 0), hold_frames: 25 })) });
@@ -45,8 +45,9 @@ test('a hold longer than the still tail fails', async () => {
 });
 
 test('the helpers', () => {
-  assert.equal(findCut([0, 0, 0, 9, 0, 0], 2), 3);
-  assert.equal(findCut([0, 0, 1, 0], 2), null);
+  const pic = (v, n = 20) => new Uint8Array(n).fill(v);
+  assert.equal(findBoundary([pic(0), pic(0), pic(0), pic(6), pic(60)], 2, 1), 3);   // a faint first fade frame counts
+  assert.equal(findBoundary([pic(0), pic(0), pic(3), pic(0)], 2, 1), null);           // 3 levels is noise
   const px = (...v) => v.map((x) => Uint8Array.of(x));
   assert.equal(stillTail(px(0, 50, 100, 197, 200, 200), 0, 6), 3);   // a slow end still counts as motion; 3 of 255 is noise
   assert.equal(bestLag([0, 1, 0, 0, 0], [0, 0, 0, 1, 0], 3), 2);

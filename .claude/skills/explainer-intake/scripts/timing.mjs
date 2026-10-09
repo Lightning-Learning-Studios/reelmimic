@@ -5,8 +5,8 @@
 //   { "fps": 30, "total_frames": 5400,
 //     "segments": [ { "start_frame": 0, "speech_end_frame": 580, "end_frame": 722, "hold_frames": 142 }, ... ] }
 // It measures, in frames:
-//   - each scene boundary: the picture cut nearest to the manifest's start_frame (a frame that differs sharply from the
-//     one before it); a boundary off by more than --tolerance frames fails;
+//   - each scene boundary: the first frame near the manifest's start_frame that differs from the held picture before it
+//     (a cut or the first frame of a transition); a boundary off by more than --tolerance frames fails;
 //   - each hold: how many frames at the end of the scene stay still; fewer than hold_frames - tolerance fails;
 //   - the length of the film against total_frames;
 //   - with --audio, the offset of the film's soundtrack against the narration master.
@@ -17,24 +17,16 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const W = 240, H = 135;   // the picture is compared at this size: a moving hand or a new label still changes pixels
 export const STILL = 12;  // a pixel more than this (of 255) away from the scene's last frame is not settled yet
 
-// Mean absolute difference between each frame and the one before it (diffs[0] = 0): a cut is a sharp peak.
-export function frameDiffs(frames) {
-  const d = [0];
-  for (let i = 1; i < frames.length; i++) {
-    let s = 0; const a = frames[i - 1], b = frames[i];
-    for (let k = 0; k < a.length; k++) s += Math.abs(a[k] - b[k]);
-    d.push(s / a.length);
+// Where a scene really starts: the first frame within +-window of `at` that differs from the held frame just before the
+// window (a cut, or the first faint frame of a fade). A handful of pixels off by a few levels is encoder noise.
+export function findBoundary(frames, at, window = 15, { level = 4, minPixels = 10 } = {}) {
+  const ref = frames[Math.max(0, at - window - 1)];
+  for (let f = Math.max(1, at - window); f <= Math.min(frames.length - 1, at + window); f++) {
+    let c = 0; const a = frames[f];
+    for (let k = 0; k < a.length && c < minPixels; k++) if (Math.abs(a[k] - ref[k]) > level) c++;
+    if (c >= minPixels) return f;
   }
-  return d;
-}
-
-// The cut nearest to `at`: the frame within +-window whose difference is largest and clearly above the still level.
-export function findCut(diffs, at, window = 15, minJump = 4) {
-  let best = -1, bestV = 0;
-  for (let f = Math.max(1, at - window); f <= Math.min(diffs.length - 1, at + window); f++) {
-    if (diffs[f] > bestV || (diffs[f] === bestV && Math.abs(f - at) < Math.abs(best - at))) { best = f; bestV = diffs[f]; }
-  }
-  return bestV >= minJump ? best : null;
+  return null;
 }
 
 // Frames at the end of [start, end) that already look like the scene's last frame: count back from end - 1 while no
@@ -65,22 +57,23 @@ export function bestLag(a, b, maxLag) {
 }
 
 export function review(manifest, pictures, { tolerance = 1 } = {}) {
-  const segs = manifest.segments, rows = [], cuts = frameDiffs(pictures), frames = pictures.length;
+  const segs = manifest.segments, rows = [], frames = pictures.length;
   let fails = 0;
   const lenOk = Math.abs(frames - manifest.total_frames) <= tolerance;
   if (!lenOk) fails++;
+  const starts = segs.map((s, i) => (i ? findBoundary(pictures, s.start_frame) : 0));
   segs.forEach((s, i) => {
     const row = { scene: i + 1, start: s.start_frame, end: s.end_frame };
     if (i > 0) {
-      const cut = findCut(cuts, s.start_frame);
-      row.cut = cut; row.cutOffset = cut == null ? null : cut - s.start_frame;
-      row.cutOk = cut != null && Math.abs(row.cutOffset) <= tolerance;
+      const b = starts[i];
+      row.cut = b; row.cutOffset = b == null ? null : b - s.start_frame;
+      row.cutOk = b != null && Math.abs(row.cutOffset) <= tolerance;
       if (!row.cutOk) fails++;
     }
     const hold = s.hold_frames ?? (s.end_frame - s.speech_end_frame);
-    // the measured scene ends at the next measured cut (or the film's end), so a late cut does not hide a short hold
-    const next = segs[i + 1] ? (findCut(cuts, segs[i + 1].start_frame) ?? segs[i + 1].start_frame) : frames;
-    row.holdWanted = hold; row.holdMeasured = stillTail(pictures, s.start_frame, Math.min(next, frames));
+    // the scene ends where the next one measurably starts (or at the film's end), so an early change shortens the hold
+    const end = Math.min(i + 1 < segs.length ? (starts[i + 1] ?? segs[i + 1].start_frame) : frames, frames);
+    row.holdWanted = hold; row.holdMeasured = stillTail(pictures, s.start_frame, end);
     row.holdOk = row.holdMeasured >= hold - tolerance;
     if (!row.holdOk) fails++;
     rows.push(row);
